@@ -16,6 +16,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadPath);
+
+        // Support legacy URLs with /api/uploads/ prefix
+        registry.addResourceHandler("/api/uploads/**")
+                .addResourceLocations(uploadPath);
                 
         // Serve frontend static files
         // In production, you might want to serve these via Nginx, 
