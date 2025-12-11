@@ -35,19 +35,49 @@
 
       <!-- Info Overlay -->
       <div class="absolute inset-0 flex flex-col justify-end p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <span class="text-xs text-blue-400 font-mono mb-1 uppercase tracking-wider">{{ item.type }}</span>
-        <p class="text-sm text-gray-200 font-medium leading-snug">{{ item.description }}</p>
+        <div class="flex justify-between items-end w-full">
+          <div>
+            <span class="text-xs text-blue-400 font-mono mb-1 uppercase tracking-wider">{{ item.type }}</span>
+            <p class="text-sm text-gray-200 font-medium leading-snug">{{ item.description }}</p>
+          </div>
+          
+          <!-- Delete Button -->
+          <button 
+            v-if="isEditing"
+            @click.stop="handleDelete(item.id)"
+            class="pointer-events-auto p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors"
+            title="Delete"
+          >
+            <Trash2 class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { type GalleryItem } from '../api'
+import { Trash2 } from 'lucide-vue-next'
+import { type GalleryItem, galleryApi } from '../api'
 
 defineProps<{
-  items: GalleryItem[]
+  items: GalleryItem[],
+  isEditing?: boolean
 }>()
+
+const emit = defineEmits(['delete-success'])
+
+const handleDelete = async (id: number) => {
+  if (!confirm('确定要删除这张图片/视频吗？')) return
+  
+  try {
+    await galleryApi.delete(id)
+    emit('delete-success')
+  } catch (e) {
+    console.error('Failed to delete item', e)
+    alert('删除失败，请重试')
+  }
+}
 
 const playVideo = (e: Event) => {
   const video = e.target as HTMLVideoElement

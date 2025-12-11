@@ -61,6 +61,7 @@ export const userApi = {
 export const galleryApi = {
   getAll: () => api.get<GalleryItem[]>('/gallery'),
   create: (item: Omit<GalleryItem, 'id' | 'createdAt'>) => api.post('/gallery', item),
+  delete: (id: number) => api.delete(`/gallery/${id}`),
   upload: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

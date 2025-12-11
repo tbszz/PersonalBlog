@@ -83,7 +83,12 @@
             :key="blogListKey" 
             :is-editing="isEditingProfile"
           />
-          <MediaGallery v-else :items="galleryItems" />
+          <MediaGallery 
+            v-else 
+            :items="galleryItems" 
+            :is-editing="isEditingProfile"
+            @delete-success="fetchGallery"
+          />
         </Transition>
       </div>
 
