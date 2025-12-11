@@ -23,10 +23,8 @@ public class FileUploadController {
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         String fileName = fileStorageService.storeFile(file);
 
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/uploads/")
-                .path(fileName)
-                .toUriString();
+        // Return relative path so frontend can use its proxy or absolute URL handling
+        String fileDownloadUri = "/uploads/" + fileName;
 
         return ResponseEntity.ok(Map.of(
             "fileName", fileName,
