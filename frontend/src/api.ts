@@ -64,7 +64,11 @@ export const galleryApi = {
   upload: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return api.post<{ url: string }>('/upload', formData)
+    return api.post<{ url: string }>('/upload', formData, {
+      headers: {
+        'Content-Type': undefined // Let browser set multipart/form-data with boundary
+      }
+    })
   }
 }
 

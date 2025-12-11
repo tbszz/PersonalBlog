@@ -74,73 +74,89 @@ public class ArticleService extends ServiceImpl<ArticleMapper, Article> {
     }
     
     public void incrementViewCount(Long articleId) {
-        String key = ARTICLE_VIEW_KEY_PREFIX + articleId;
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.opsForSet().add(DIRTY_VIEW_ARTICLES_KEY, articleId);
+        try {
+            String key = ARTICLE_VIEW_KEY_PREFIX + articleId;
+            redisTemplate.opsForValue().increment(key);
+            redisTemplate.opsForSet().add(DIRTY_VIEW_ARTICLES_KEY, articleId);
+        } catch (Exception e) {
+            System.err.println("Redis error in incrementViewCount: " + e.getMessage());
+        }
     }
     
     public void incrementLikeCount(Long articleId) {
-        String key = ARTICLE_LIKE_KEY_PREFIX + articleId;
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.opsForSet().add(DIRTY_LIKE_ARTICLES_KEY, articleId);
+        try {
+            String key = ARTICLE_LIKE_KEY_PREFIX + articleId;
+            redisTemplate.opsForValue().increment(key);
+            redisTemplate.opsForSet().add(DIRTY_LIKE_ARTICLES_KEY, articleId);
+        } catch (Exception e) {
+            System.err.println("Redis error in incrementLikeCount: " + e.getMessage());
+        }
     }
     
     @Scheduled(fixedDelay = 60000) // Every 1 minute
     public void syncViewCountsToDatabase() {
-        Set<Object> dirtyArticleIds = redisTemplate.opsForSet().members(DIRTY_VIEW_ARTICLES_KEY);
-        if (CollectionUtils.isEmpty(dirtyArticleIds)) {
-            return;
-        }
-        
-        for (Object idObj : dirtyArticleIds) {
-            try {
-                Long articleId = Long.valueOf(idObj.toString());
-                String key = ARTICLE_VIEW_KEY_PREFIX + articleId;
-                Object countObj = redisTemplate.opsForValue().get(key);
-                
-                if (countObj != null) {
-                    Long count = Long.valueOf(countObj.toString());
-                    Article article = getById(articleId);
-                    if (article != null) {
-                        article.setViewCount(article.getViewCount() + count);
-                        updateById(article);
-                        redisTemplate.delete(key);
-                        redisTemplate.opsForSet().remove(DIRTY_VIEW_ARTICLES_KEY, idObj);
-                    }
-                }
-            } catch (Exception e) {
-                // Log error but continue
-                e.printStackTrace();
+        try {
+            Set<Object> dirtyArticleIds = redisTemplate.opsForSet().members(DIRTY_VIEW_ARTICLES_KEY);
+            if (CollectionUtils.isEmpty(dirtyArticleIds)) {
+                return;
             }
+            
+            for (Object idObj : dirtyArticleIds) {
+                try {
+                    Long articleId = Long.valueOf(idObj.toString());
+                    String key = ARTICLE_VIEW_KEY_PREFIX + articleId;
+                    Object countObj = redisTemplate.opsForValue().get(key);
+                    
+                    if (countObj != null) {
+                        Long count = Long.valueOf(countObj.toString());
+                        Article article = getById(articleId);
+                        if (article != null) {
+                            article.setViewCount(article.getViewCount() + count);
+                            updateById(article);
+                            redisTemplate.delete(key);
+                            redisTemplate.opsForSet().remove(DIRTY_VIEW_ARTICLES_KEY, idObj);
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log error but continue
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Redis error in syncViewCountsToDatabase: " + e.getMessage());
         }
     }
     
     @Scheduled(fixedDelay = 60000) // Every 1 minute
     public void syncLikeCountsToDatabase() {
-        Set<Object> dirtyArticleIds = redisTemplate.opsForSet().members(DIRTY_LIKE_ARTICLES_KEY);
-        if (CollectionUtils.isEmpty(dirtyArticleIds)) {
-            return;
-        }
-        
-        for (Object idObj : dirtyArticleIds) {
-            try {
-                Long articleId = Long.valueOf(idObj.toString());
-                String key = ARTICLE_LIKE_KEY_PREFIX + articleId;
-                Object countObj = redisTemplate.opsForValue().get(key);
-                
-                if (countObj != null) {
-                    Long count = Long.valueOf(countObj.toString());
-                    Article article = getById(articleId);
-                    if (article != null) {
-                        article.setLikeCount(article.getLikeCount() + count);
-                        updateById(article);
-                        redisTemplate.delete(key);
-                        redisTemplate.opsForSet().remove(DIRTY_LIKE_ARTICLES_KEY, idObj);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            Set<Object> dirtyArticleIds = redisTemplate.opsForSet().members(DIRTY_LIKE_ARTICLES_KEY);
+            if (CollectionUtils.isEmpty(dirtyArticleIds)) {
+                return;
             }
+            
+            for (Object idObj : dirtyArticleIds) {
+                try {
+                    Long articleId = Long.valueOf(idObj.toString());
+                    String key = ARTICLE_LIKE_KEY_PREFIX + articleId;
+                    Object countObj = redisTemplate.opsForValue().get(key);
+                    
+                    if (countObj != null) {
+                        Long count = Long.valueOf(countObj.toString());
+                        Article article = getById(articleId);
+                        if (article != null) {
+                            article.setLikeCount(article.getLikeCount() + count);
+                            updateById(article);
+                            redisTemplate.delete(key);
+                            redisTemplate.opsForSet().remove(DIRTY_LIKE_ARTICLES_KEY, idObj);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Redis error in syncLikeCountsToDatabase: " + e.getMessage());
         }
     }
     

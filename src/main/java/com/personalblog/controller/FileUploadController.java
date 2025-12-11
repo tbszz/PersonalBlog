@@ -21,14 +21,22 @@ public class FileUploadController {
 
     @PostMapping
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
-        String fileName = fileStorageService.storeFile(file);
+        try {
+            System.out.println("Received file upload request: " + file.getOriginalFilename() + ", size: " + file.getSize());
+            String fileName = fileStorageService.storeFile(file);
 
-        // Return relative path so frontend can use its proxy or absolute URL handling
-        String fileDownloadUri = "/uploads/" + fileName;
+            // Return relative path so frontend can use its proxy or absolute URL handling
+            String fileDownloadUri = "/uploads/" + fileName;
 
-        return ResponseEntity.ok(Map.of(
-            "fileName", fileName,
-            "url", fileDownloadUri
-        ));
+            System.out.println("File stored successfully: " + fileName);
+            return ResponseEntity.ok(Map.of(
+                "fileName", fileName,
+                "url", fileDownloadUri
+            ));
+        } catch (Exception e) {
+            System.err.println("UPLOAD FAILED:");
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Upload failed: " + e.getMessage()));
+        }
     }
 }
