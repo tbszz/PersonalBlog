@@ -187,7 +187,7 @@ const handleSubmit = async () => {
     console.error(e)
     error.value = e.response?.data?.message || e.message || 'Failed to upload file'
   } finally {
-    isUploading.value = false
+    loading.value = false
   }
 }
 </script>
