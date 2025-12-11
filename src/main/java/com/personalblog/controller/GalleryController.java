@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/gallery")
+@RequestMapping("/api/gallery")
 public class GalleryController {
     
     @Autowired
