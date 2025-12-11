@@ -16,6 +16,10 @@ public class FileStorageService {
     private final Path fileStorageLocation;
 
     public FileStorageService() {
+        // Use an absolute path that is guaranteed to be writable and accessible
+        // In local dev, we can use the project root "uploads" folder
+        // In Docker, we should use a volume or a specific path like /app/uploads
+        // For simplicity and compatibility, we stick to "uploads" relative to working dir
         this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -30,6 +34,9 @@ public class FileStorageService {
         String extension = "";
         if (originalFileName != null && originalFileName.contains(".")) {
             extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        } else {
+            // Default extension if missing
+            extension = ".jpg"; 
         }
         
         String fileName = UUID.randomUUID().toString() + extension;
