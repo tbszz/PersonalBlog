@@ -19,6 +19,7 @@ export interface Database {
                 Row: {
                     id: number
                     username: string
+                    password?: string
                     nickname: string | null
                     avatar: string | null
                     role: string
