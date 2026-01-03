@@ -37,25 +37,34 @@
 
             <!-- Stats -->
             <div class="flex gap-6 w-full justify-center md:justify-between px-2">
-               <div class="text-center">
-                  <div class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.articles }}</div>
+               <div class="text-center w-20"> <!-- Added width for input stability -->
+                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.articles }}</div>
+                  <input v-else v-model="editForm.stats.articles" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
                   <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Articles</div>
                </div>
-               <div class="w-px h-8 bg-white/10"></div>
-               <div class="text-center">
-                  <div class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.albums }}</div>
+               <div class="w-px h-8 bg-white/10 self-center"></div>
+               <div class="text-center w-20">
+                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.albums }}</div>
+                  <input v-else v-model="editForm.stats.albums" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
                   <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Albums</div>
                </div>
-               <div class="w-px h-8 bg-white/10"></div>
-               <div class="text-center">
-                  <div class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.years }}</div>
+               <div class="w-px h-8 bg-white/10 self-center"></div>
+               <div class="text-center w-20">
+                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.years }}</div>
+                  <input v-else v-model="editForm.stats.years" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
                   <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Years</div>
                </div>
             </div>
 
             <!-- Social Links -->
             <div class="flex gap-4 mt-2">
-               <a v-for="social in profileData.profile.socials" :key="social.name" :href="social.url" class="p-2.5 rounded-full bg-white/5 border border-white/5 hover:bg-white hover:text-black hover:border-white text-gray-400 transition-all duration-300">
+               <a 
+                 v-for="social in profileData.profile.socials" 
+                 :key="social.name" 
+                 :href="social.name === 'Wechat' ? 'javascript:void(0)' : social.url" 
+                 @click="social.name === 'Wechat' ? openWechatModal() : null"
+                 class="p-2.5 rounded-full bg-white/5 border border-white/5 hover:bg-white hover:text-black hover:border-white text-gray-400 transition-all duration-300 cursor-pointer"
+               >
                   <component :is="getIcon(social.icon)" class="w-4 h-4" />
                </a>
             </div>
@@ -147,6 +156,15 @@
         <!-- Card Glow Behind -->
         <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10"></div>
       </div>
+    
+    <!-- Wechat Modal -->
+    <WechatModal 
+      :is-open="wechatModalOpen"
+      :qr-code-url="wechatQrCode"
+      :is-editing="isEditing"
+      @close="wechatModalOpen = false"
+      @update="handleWechatUpdate"
+    />
     </div>
 
     <!-- Background Ambience -->
@@ -157,8 +175,9 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch, onMounted } from 'vue'
 import { useMouse, useWindowSize } from '@vueuse/core'
-import { Github, Tv, Mail, UploadCloud } from 'lucide-vue-next'
+import { Github, Tv, MessageSquare, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
+import WechatModal from './WechatModal.vue'
 
 const props = defineProps<{
   isEditing: boolean
@@ -169,8 +188,22 @@ const emit = defineEmits(['update-profile'])
 const { x, y } = useMouse()
 const { width, height } = useWindowSize()
 
-const avatarUrl = ref('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
+// Try to load avatar from cache to prevent flickering
+const getCachedAvatar = () => {
+  try {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      return user.avatar
+    }
+  } catch(e) {}
+  return null
+}
+
+const avatarUrl = ref(getCachedAvatar() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
 const avatarInput = ref<HTMLInputElement | null>(null)
+const wechatModalOpen = ref(false)
+const wechatQrCode = ref('')
 
 const triggerAvatarUpload = () => {
   if (props.isEditing) {
@@ -184,14 +217,19 @@ const handleAvatarChange = async (e: Event) => {
     const file = target.files[0]
     try {
       const { data } = await galleryApi.upload(file)
-      // Update local preview immediately
       editForm.avatar = data.url
-      // Also update the main avatar url if we are just previewing
-      // But usually we wait for save. Here we update editForm.avatar
     } catch (e) {
       console.error('Failed to upload avatar', e)
     }
   }
+}
+
+const handleWechatUpdate = (url: string) => {
+  wechatQrCode.value = url
+}
+
+const openWechatModal = () => {
+  wechatModalOpen.value = true
 }
 
 const parallaxStyle = computed(() => {
@@ -208,7 +246,7 @@ const getIcon = (name: string) => {
    switch(name) {
       case 'Github': return Github
       case 'Tv': return Tv // Bilibili
-      case 'Mail': return Mail
+      case 'Wechat': return MessageSquare
       default: return Github
    }
 }
@@ -238,7 +276,7 @@ const initialProfile = {
      socials: [
        { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
        { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
-       { name: "Email", icon: "Mail", url: "mailto:contact@example.com" }
+       { name: "Wechat", icon: "Wechat", url: "#" } // Click handled separately
      ]
    },
    stats: {
@@ -250,24 +288,63 @@ const initialProfile = {
 
 const profileData = reactive(JSON.parse(JSON.stringify(initialProfile)))
 
+// Edit Form State
+const editForm = reactive({
+  nickname: profileData.profile.nickname,
+  slogan: profileData.profile.slogan,
+  subSlogan: profileData.profile.subSlogan,
+  bio: { ...profileData.profile.bio },
+  avatar: avatarUrl.value,
+  stats: { ...profileData.stats }
+})
+
 // Load Profile from API
 const fetchProfile = async () => {
   try {
     const { data } = await userApi.getProfile('admin')
+    
+    // Parse Profile JSON
     if (data.profileJson) {
       try {
         const parsed = JSON.parse(data.profileJson)
-        Object.assign(profileData, parsed)
+        // Only merge profile section to allow separate stats handling
+        if (parsed.profile) Object.assign(profileData.profile, parsed.profile)
       } catch (e) {
         console.error('Failed to parse profile JSON', e)
       }
     }
+
+    // Load Stats from separate column
+    if (data.profileStats) {
+      if (typeof data.profileStats === 'string') {
+          // Handle case where specific type might be string if coming from raw JSON
+          try { Object.assign(profileData.stats, JSON.parse(data.profileStats)) } catch {}
+      } else {
+          Object.assign(profileData.stats, data.profileStats)
+      }
+    }
+
+    // Load WeChat QR Code
+    if (data.wechatQrCode) {
+      wechatQrCode.value = data.wechatQrCode
+    }
+
+    // Load Basic Info
     if (data.avatar) {
       avatarUrl.value = data.avatar
+      editForm.avatar = data.avatar
     }
     if (data.nickname) {
       profileData.profile.nickname = data.nickname
+      editForm.nickname = data.nickname
     }
+    
+    // Sync edit form
+    editForm.slogan = profileData.profile.slogan
+    editForm.subSlogan = profileData.profile.subSlogan
+    editForm.bio = { ...profileData.profile.bio }
+    editForm.stats = { ...profileData.stats }
+
   } catch (e) {
     console.error('Failed to fetch profile', e)
   }
@@ -277,47 +354,62 @@ onMounted(() => {
   fetchProfile()
 })
 
-// Edit Form State
-const editForm = reactive({
-  nickname: profileData.profile.nickname,
-  slogan: profileData.profile.slogan,
-  subSlogan: profileData.profile.subSlogan,
-  bio: { ...profileData.profile.bio },
-  avatar: avatarUrl.value
-})
-
 // Update editForm when profileData changes (e.g. after fetch)
 watch(profileData, (newVal) => {
   editForm.nickname = newVal.profile.nickname
   editForm.slogan = newVal.profile.slogan
   editForm.subSlogan = newVal.profile.subSlogan
   editForm.bio = { ...newVal.profile.bio }
+  editForm.stats = { ...newVal.stats }
 }, { deep: true })
 
 // Sync back when saving
 const saveProfile = async () => {
-  profileData.profile.nickname = editForm.nickname
-  profileData.profile.slogan = editForm.slogan
-  profileData.profile.subSlogan = editForm.subSlogan
-  profileData.profile.bio = { ...editForm.bio }
-  // Update main avatar URL on save
+  // Update local state
+  Object.assign(profileData.profile, {
+    nickname: editForm.nickname,
+    slogan: editForm.slogan,
+    subSlogan: editForm.subSlogan,
+    bio: { ...editForm.bio }
+  })
+  Object.assign(profileData.stats, editForm.stats)
+  
   avatarUrl.value = editForm.avatar
   
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    if (!user.id) return
+    // Fallback ID if not in localStorage. In real app, must be logged in.
+    const userId = user.id || 1 // Assuming 1 for admin or fail gracefully
+    if (!userId) {
+       console.error("No user ID found")
+       return
+    }
 
-    await userApi.updateProfile(user.id, {
+    // Construct the JSON for the profile_json column (excluding stats/qrcode which are separate now, or keep them consistent)
+    // We keep 'profile' inside JSON, but 'stats' are separate
+    const profileJsonToSave = {
+        profile: profileData.profile
+        // Stats are saved separately
+    }
+
+    await userApi.updateProfile(userId, {
       nickname: editForm.nickname,
       avatar: editForm.avatar,
-      profileJson: JSON.stringify(profileData)
+      profileJson: JSON.stringify(profileJsonToSave),
+      profileStats: editForm.stats,
+      wechatQrCode: wechatQrCode.value
     })
+    
+    // Update cache
+    user.avatar = editForm.avatar
+    localStorage.setItem('user', JSON.stringify(user))
+
   } catch (e) {
     console.error('Failed to save profile', e)
     alert('保存失败，请重试')
   }
 
-  emit('update-profile', false) // Turn off edit mode
+  emit('update-profile', false)
 }
 
 </script>

@@ -24,6 +24,8 @@ export interface Database {
                     avatar: string | null
                     role: string
                     profile_json: string | null
+                    profile_stats: Json | null
+                    wechat_qr_code: string | null
                     created_at: string
                 }
                 Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at'>

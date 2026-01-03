@@ -10,6 +10,8 @@ export interface User {
   avatar?: string
   role: string
   profileJson?: string
+  profileStats?: { articles: string; albums: string; years: string }
+  wechatQrCode?: string
   token?: string
 }
 
