@@ -10,6 +10,7 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
     "@vueuse/core": "^14.1.0",
     "axios": "^1.6.2",
     "framer-motion": "^10.16.5",

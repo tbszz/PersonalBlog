@@ -35,7 +35,7 @@ public class GalleryController {
     
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteGalleryItem(@PathVariable Long id) {
-        boolean removed = galleryItemService.removeById(id);
+        boolean removed = galleryItemService.deleteGalleryItem(id);
         if (removed) {
             return ResponseEntity.ok(Map.of("message", "Gallery item deleted successfully"));
         } else {

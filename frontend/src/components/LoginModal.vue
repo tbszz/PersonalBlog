@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import api from '../api'
+import { authApi } from '../api'
 
 const props = defineProps<{
   isOpen: boolean
@@ -71,12 +71,9 @@ const handleLogin = async () => {
   error.value = ''
   
   try {
-    const { data } = await api.post('/auth/login', {
-      username: username.value,
-      password: password.value
-    })
+    const { data } = await authApi.login(username.value, password.value)
     
-    // Store user info/token
+    // Store user info
     localStorage.setItem('user', JSON.stringify(data))
     emit('login-success', data)
     close()
@@ -87,3 +84,4 @@ const handleLogin = async () => {
   }
 }
 </script>
+
