@@ -173,9 +173,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, watch, onMounted } from 'vue'
+import { computed, ref, reactive, watch, onMounted, h } from 'vue'
 import { useMouse, useWindowSize } from '@vueuse/core'
-import { Github, Tv, MessageSquare, UploadCloud } from 'lucide-vue-next'
+import { Github, Tv, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
 
@@ -242,11 +242,22 @@ const parallaxStyle = computed(() => {
   }
 })
 
+const WechatIcon = {
+  render: () => h('svg', { 
+    xmlns: 'http://www.w3.org/2000/svg',
+    viewBox: '0 0 24 24',
+    fill: 'currentColor',
+    class: 'w-4 h-4'
+  }, [
+    h('path', { d: 'M8.696 15.65c-.244 0-.466.07-.688.163-.645.28-1.78.863-2.313 1.12-.132.07-.266.024-.266-.117 0-.07 0-.257.022-1.285.023-.934-.334-1.636-.889-2.29C2.793 11.166 1.5 9.176 1.5 6.946c0-3.32 3.107-6.071 7.286-6.071 4.156 0 7.42 2.727 7.42 6.07 0 3.32-3.13 6.072-7.51 6.072zM17.5 7.922c-3.82 0-7.07 2.22-7.07 5.176 0 2.928 3.09 5.2 6.87 5.2.42 0 .822-.047 1.222-.117.756.538 1.956 1.264 2.534 1.638.156.117.334.024.312-.164-.045-1.123-.023-1.637.022-1.99.712-.702 1.112-1.567 1.112-2.48.022-2.926-2.156-5.263-5.002-5.263z' })
+  ])
+}
+
 const getIcon = (name: string) => {
    switch(name) {
       case 'Github': return Github
       case 'Tv': return Tv // Bilibili
-      case 'Wechat': return MessageSquare
+      case 'Wechat': return WechatIcon
       default: return Github
    }
 }
@@ -276,7 +287,7 @@ const initialProfile = {
      socials: [
        { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
        { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
-       { name: "Wechat", icon: "Wechat", url: "#" } // Click handled separately
+       { name: "Wechat", icon: "Wechat", url: "#" } 
      ]
    },
    stats: {
@@ -307,8 +318,15 @@ const fetchProfile = async () => {
     if (data.profileJson) {
       try {
         const parsed = JSON.parse(data.profileJson)
-        // Only merge profile section to allow separate stats handling
-        if (parsed.profile) Object.assign(profileData.profile, parsed.profile)
+        if (parsed.profile) {
+          Object.assign(profileData.profile, parsed.profile)
+          // Force overwrite socials to ensure WeChat icon is present (handling legacy data)
+          profileData.profile.socials = [
+             { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
+             { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
+             { name: "Wechat", icon: "Wechat", url: "#" }
+          ]
+        }
       } catch (e) {
         console.error('Failed to parse profile JSON', e)
       }
