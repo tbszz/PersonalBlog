@@ -31,8 +31,10 @@
                 <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2" />
                 正在加载文章内容...
               </div>
-              <div v-else class="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {{ expandedContent }}
+              <div v-else 
+                   class="prose prose-invert prose-sm sm:prose-base max-w-none text-gray-300 leading-relaxed markdown-body"
+                   v-html="renderMarkdown(expandedContent)"
+              >
               </div>
               
               <!-- Close hint -->
@@ -100,6 +102,7 @@
 import { ref, onMounted } from 'vue'
 import { Eye, ThumbsUp, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-vue-next'
 import { articleApi, type Article } from '../api'
+import { marked } from 'marked'
 
 const props = defineProps<{
   isEditing?: boolean
@@ -131,6 +134,11 @@ const toggleArticle = async (id: number) => {
   } finally {
     loadingDetail.value = false
   }
+}
+
+const renderMarkdown = (content: string) => {
+  if (!content) return ''
+  return marked.parse(content)
 }
 
 const posts = ref<Article[]>([])
@@ -254,5 +262,25 @@ onMounted(() => {
     font-size: 0.875rem;
     line-height: 1.625;
   }
+}
+
+/* Custom Markdown Styles */
+:deep(.markdown-body img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5rem auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  display: block;
+}
+
+:deep(.markdown-body p) {
+  margin-bottom: 1.25rem;
+}
+
+:deep(.markdown-body h1, .markdown-body h2, .markdown-body h3) {
+  color: #fff;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 </style>
