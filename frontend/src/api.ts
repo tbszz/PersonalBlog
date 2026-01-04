@@ -44,7 +44,8 @@ export interface Article {
 // ==================== 工具函数 ====================
 
 // 将数据库字段名（snake_case）转换为前端字段名（camelCase）
-function toCamelCase<T>(obj: Record<string, unknown>): T {
+function toCamelCase<T>(obj: Record<string, unknown> | null): T {
+  if (!obj) return {} as T
   const result: Record<string, unknown> = {}
   for (const key in obj) {
     const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
@@ -55,9 +56,14 @@ function toCamelCase<T>(obj: Record<string, unknown>): T {
 
 // 将前端字段名（camelCase）转换为数据库字段名（snake_case）
 function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
+  if (!obj) return {}
   const result: Record<string, unknown> = {}
   for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+    // 处理驼峰转蛇形：在小写字母和大写字母之间插入下划线
+    // 例如 profileJson -> profile_json，而不是 profile_j_son
+    const snakeKey = key
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .toLowerCase()
     result[snakeKey] = obj[key]
   }
   return result
