@@ -213,10 +213,11 @@ const getCachedAvatar = () => {
 
 // Avatar state management
 const avatarUrl = ref(getCachedAvatar() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
-const avatarLoading = ref(true) // Start with loading state
+const avatarLoading = ref(true) 
 const avatarInput = ref<HTMLInputElement | null>(null)
 const wechatModalOpen = ref(false)
 const wechatQrCode = ref('')
+const currentUserId = ref<number | null>(null) // 新增：存储当前用户的真实 ID
 
 // Preload avatar image to prevent flickering
 const preloadAvatar = (url: string) => {
@@ -385,6 +386,10 @@ const fetchProfile = async () => {
     }
 
     // Load Basic Info with avatar preloading to prevent flickering
+    if (data.id) {
+      currentUserId.value = data.id
+    }
+    
     if (data.avatar && data.avatar !== avatarUrl.value) {
       try {
         avatarLoading.value = true
@@ -449,11 +454,18 @@ const saveProfile = async () => {
   
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    // Fallback ID if not in localStorage. In real app, must be logged in.
-    const userId = user.id || 1 // Assuming 1 for admin or fail gracefully
+    // 优先使用接口获取到的实时 ID，其次使用缓存，最后才使用回退
+    const userId = currentUserId.value || user.id || 1 
+    
     if (!userId) {
        console.error("No user ID found")
        return
+    }
+
+    // 更新本地缓存中的 ID，防止下次加载时 ID 依然是旧的
+    if (currentUserId.value && user.id !== currentUserId.value) {
+      user.id = currentUserId.value
+      localStorage.setItem('user', JSON.stringify(user))
     }
 
     // Preload avatar before saving to ensure smooth transition

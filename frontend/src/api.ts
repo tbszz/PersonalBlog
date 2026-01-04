@@ -89,10 +89,12 @@ export const userApi = {
       .update(toSnakeCase(userData as Record<string, unknown>))
       .eq('id', id)
       .select()
-      .single()
 
     if (error) throw error
-    return { data: toCamelCase<User>(data) }
+    if (!data || data.length === 0) {
+      throw new Error('User not found or nothing updated')
+    }
+    return { data: toCamelCase<User>(data[0]) }
   }
 }
 
