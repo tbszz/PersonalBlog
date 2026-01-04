@@ -16,7 +16,18 @@
                 class="w-full h-full rounded-full overflow-hidden bg-black/50 relative group/avatar cursor-pointer"
                 @click="triggerAvatarUpload"
               >
-                 <img :src="isEditing ? editForm.avatar : avatarUrl" alt="Avatar" class="w-full h-full object-cover transition-transform duration-700 group-hover/avatar:scale-110" />
+                 <!-- Show loading placeholder while image is loading -->
+                 <div v-if="avatarLoading" class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                   <div class="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
+                 </div>
+                 <img 
+                   v-show="!avatarLoading"
+                   :src="isEditing ? editForm.avatar : avatarUrl" 
+                   alt="Avatar" 
+                   class="w-full h-full object-cover transition-all duration-700 group-hover/avatar:scale-110"
+                   @load="onAvatarLoad"
+                   @error="onAvatarError"
+                 />
                  <!-- Avatar Glow / Edit Overlay -->
                  <div class="absolute inset-0 bg-blue-500/20 mix-blend-overlay opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500 flex items-center justify-center">
                    <div v-if="isEditing" class="bg-black/50 p-2 rounded-full backdrop-blur-sm">
@@ -200,10 +211,31 @@ const getCachedAvatar = () => {
   return null
 }
 
+// Avatar state management
 const avatarUrl = ref(getCachedAvatar() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
+const avatarLoading = ref(true) // Start with loading state
 const avatarInput = ref<HTMLInputElement | null>(null)
 const wechatModalOpen = ref(false)
 const wechatQrCode = ref('')
+
+// Preload avatar image to prevent flickering
+const preloadAvatar = (url: string) => {
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => reject()
+    img.src = url
+  })
+}
+
+const onAvatarLoad = () => {
+  avatarLoading.value = false
+}
+
+const onAvatarError = () => {
+  console.error('Failed to load avatar image')
+  avatarLoading.value = false
+}
 
 const triggerAvatarUpload = () => {
   if (props.isEditing) {
@@ -215,11 +247,16 @@ const handleAvatarChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    avatarLoading.value = true
     try {
       const { data } = await galleryApi.upload(file)
+      // Preload the new avatar before displaying
+      await preloadAvatar(data.url)
       editForm.avatar = data.url
+      avatarLoading.value = false
     } catch (e) {
       console.error('Failed to upload avatar', e)
+      avatarLoading.value = false
     }
   }
 }
@@ -347,11 +384,28 @@ const fetchProfile = async () => {
       wechatQrCode.value = data.wechatQrCode
     }
 
-    // Load Basic Info
-    if (data.avatar) {
-      avatarUrl.value = data.avatar
-      editForm.avatar = data.avatar
+    // Load Basic Info with avatar preloading to prevent flickering
+    if (data.avatar && data.avatar !== avatarUrl.value) {
+      try {
+        avatarLoading.value = true
+        await preloadAvatar(data.avatar)
+        avatarUrl.value = data.avatar
+        editForm.avatar = data.avatar
+        
+        // Update cache
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        user.avatar = data.avatar
+        localStorage.setItem('user', JSON.stringify(user))
+      } catch (e) {
+        console.error('Failed to preload avatar', e)
+      } finally {
+        avatarLoading.value = false
+      }
+    } else {
+      // If avatar is the same or not present, just stop loading
+      avatarLoading.value = false
     }
+    
     if (data.nickname) {
       profileData.profile.nickname = data.nickname
       editForm.nickname = data.nickname
@@ -365,6 +419,7 @@ const fetchProfile = async () => {
 
   } catch (e) {
     console.error('Failed to fetch profile', e)
+    avatarLoading.value = false
   }
 }
 
@@ -392,8 +447,6 @@ const saveProfile = async () => {
   })
   Object.assign(profileData.stats, editForm.stats)
   
-  avatarUrl.value = editForm.avatar
-  
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     // Fallback ID if not in localStorage. In real app, must be logged in.
@@ -402,6 +455,19 @@ const saveProfile = async () => {
        console.error("No user ID found")
        return
     }
+
+    // Preload avatar before saving to ensure smooth transition
+    if (editForm.avatar !== avatarUrl.value) {
+      avatarLoading.value = true
+      try {
+        await preloadAvatar(editForm.avatar)
+      } catch (e) {
+        console.error('Failed to preload avatar on save', e)
+      }
+    }
+    
+    avatarUrl.value = editForm.avatar
+    avatarLoading.value = false
 
     // Construct the JSON for the profile_json column (excluding stats/qrcode which are separate now, or keep them consistent)
     // We keep 'profile' inside JSON, but 'stats' are separate
@@ -418,13 +484,14 @@ const saveProfile = async () => {
       wechatQrCode: wechatQrCode.value
     })
     
-    // Update cache
+    // Update cache with new avatar
     user.avatar = editForm.avatar
     localStorage.setItem('user', JSON.stringify(user))
 
   } catch (e) {
     console.error('Failed to save profile', e)
     alert('保存失败，请重试')
+    avatarLoading.value = false
   }
 
   emit('update-profile', false)
