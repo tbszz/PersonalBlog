@@ -2,8 +2,8 @@
   <div ref="page" class="min-h-screen bg-[#050505] text-white relative font-sans selection:bg-blue-500/30 selection:text-blue-200">
     
     <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-5 backdrop-blur-md bg-[#050505]/50 border-b border-white/5 transition-all duration-300">
-      <div class="text-lg font-bold tracking-tighter font-serif-sc">邹子</div>
+    <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-6 py-3 sm:py-5 backdrop-blur-md bg-[#050505]/50 border-b border-white/5 transition-all duration-300">
+      <div class="text-base sm:text-lg font-bold tracking-tighter font-serif-sc">邹子</div>
       <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
         <a href="#" class="hover:text-white transition-colors">Home</a>
         <a href="#" class="hover:text-white transition-colors">Blog</a>
@@ -49,10 +49,10 @@
     />
 
     <!-- Main Content -->
-    <section class="relative z-20 px-4 md:px-8 pb-32 max-w-7xl mx-auto -mt-20">
+    <section class="relative z-20 px-3 sm:px-4 md:px-8 pb-16 sm:pb-32 max-w-7xl mx-auto -mt-10 sm:-mt-20">
       
       <!-- 2. Control Center (Admin) -->
-      <div class="flex justify-center mb-16" v-if="isLoggedIn">
+      <div class="flex justify-center mb-8 sm:mb-16" v-if="isLoggedIn">
         <ActionToolbar 
           @upload="showUploadModal = true" 
           @write="showWriteModal = true"
@@ -60,13 +60,13 @@
       </div>
 
       <!-- 3. Content Tabs -->
-      <div class="flex justify-center mb-12">
+      <div class="flex justify-center mb-8 sm:mb-12">
         <div class="flex items-center bg-white/5 p-1 rounded-full backdrop-blur-sm border border-white/5">
           <button 
             v-for="tab in tabs" 
             :key="tab.id"
             @click="currentTab = tab.id"
-            class="relative px-8 py-2 rounded-full text-sm font-medium transition-colors duration-300 z-10"
+            class="relative px-4 sm:px-8 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors duration-300 z-10"
             :class="currentTab === tab.id ? 'text-black' : 'text-gray-400 hover:text-white'"
           >
             <span v-if="currentTab === tab.id" class="absolute inset-0 bg-white rounded-full shadow-lg -z-10" layoutId="activeTab"></span>

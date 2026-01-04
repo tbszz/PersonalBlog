@@ -1,17 +1,17 @@
 <template>
-  <section class="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden px-4">
+  <section class="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
     <!-- Parallax Container -->
     <div class="relative z-10 w-full max-w-5xl" :style="parallaxStyle">
       
       <!-- Expanded Profile Card -->
       <div class="relative group">
         <!-- Glassmorphism Card Background -->
-        <div class="relative z-10 backdrop-blur-xl bg-[#0a0a0a]/60 border border-white/10 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row gap-10 md:gap-16 items-start transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_50px_rgba(255,255,255,0.03)] overflow-hidden">
+        <div class="relative z-10 backdrop-blur-xl bg-[#0a0a0a]/60 border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12 flex flex-col md:flex-row gap-6 sm:gap-8 md:gap-16 items-center md:items-start transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_50px_rgba(255,255,255,0.03)] overflow-hidden">
           
           <!-- Left Column: Avatar & Stats -->
-          <div class="flex flex-col items-center md:items-start gap-6 w-full md:w-auto flex-shrink-0">
+          <div class="flex flex-col items-center md:items-start gap-4 sm:gap-6 w-full md:w-auto flex-shrink-0">
             <!-- Avatar Ring -->
-            <div class="relative w-32 h-32 md:w-40 md:h-40 rounded-full p-1 bg-gradient-to-br from-white/20 to-transparent">
+            <div class="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full p-1 bg-gradient-to-br from-white/20 to-transparent mx-auto md:mx-0">
               <div 
                 class="w-full h-full rounded-full overflow-hidden bg-black/50 relative group/avatar cursor-pointer"
                 @click="triggerAvatarUpload"
@@ -36,23 +36,23 @@
             </div>
 
             <!-- Stats -->
-            <div class="flex gap-6 w-full justify-center md:justify-between px-2">
-               <div class="text-center w-20"> <!-- Added width for input stability -->
-                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.articles }}</div>
-                  <input v-else v-model="editForm.stats.articles" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
-                  <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Articles</div>
+            <div class="flex gap-3 sm:gap-6 w-full justify-center md:justify-between px-0 sm:px-2">
+               <div class="text-center w-16 sm:w-20"> <!-- Added width for input stability -->
+                  <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.articles }}</div>
+                  <input v-else v-model="editForm.stats.articles" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Articles</div>
                </div>
                <div class="w-px h-8 bg-white/10 self-center"></div>
-               <div class="text-center w-20">
-                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.albums }}</div>
-                  <input v-else v-model="editForm.stats.albums" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
-                  <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Albums</div>
+               <div class="text-center w-16 sm:w-20">
+                  <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.albums }}</div>
+                  <input v-else v-model="editForm.stats.albums" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Albums</div>
                </div>
                <div class="w-px h-8 bg-white/10 self-center"></div>
-               <div class="text-center w-20">
-                  <div v-if="!isEditing" class="text-xl font-bold text-white font-serif-sc">{{ profileData.stats.years }}</div>
-                  <input v-else v-model="editForm.stats.years" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold" />
-                  <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Years</div>
+               <div class="text-center w-16 sm:w-20">
+                  <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.years }}</div>
+                  <input v-else v-model="editForm.stats.years" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Years</div>
                </div>
             </div>
 
@@ -71,43 +71,43 @@
           </div>
 
           <!-- Right Column: Info & Bio -->
-          <div class="flex-1 space-y-8 text-center md:text-left w-full">
+          <div class="flex-1 space-y-4 sm:space-y-6 md:space-y-8 text-center md:text-left w-full">
             
             <!-- Header -->
-            <div class="space-y-3">
-              <div class="flex flex-col md:flex-row items-center md:items-end gap-4">
-                 <h1 v-if="!isEditing" class="text-4xl md:text-5xl font-bold text-white font-serif-sc tracking-tight">
+            <div class="space-y-2 sm:space-y-3">
+              <div class="flex flex-col md:flex-row items-center md:items-end gap-2 sm:gap-4">
+                 <h1 v-if="!isEditing" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white font-serif-sc tracking-tight">
                     {{ profileData.profile.nickname }}
                  </h1>
-                 <input v-else v-model="editForm.nickname" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-2xl w-full md:w-auto text-white" />
+                 <input v-else v-model="editForm.nickname" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xl sm:text-2xl w-full md:w-auto text-white text-center md:text-left" />
 
                  <!-- Small Slogan Badge -->
-                 <span v-if="!isEditing" class="px-3 py-1 rounded text-xs font-medium bg-white/10 text-white/80 border border-white/10 font-xingkai text-lg tracking-wide transform -translate-y-1">
+                 <span v-if="!isEditing" class="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-medium bg-white/10 text-white/80 border border-white/10 font-xingkai text-sm sm:text-lg tracking-wide transform md:-translate-y-1">
                     {{ profileData.profile.slogan }}
                  </span>
-                 <input v-else v-model="editForm.slogan" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white" placeholder="Slogan" />
+                 <input v-else v-model="editForm.slogan" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white w-full md:w-auto" placeholder="Slogan" />
               </div>
               
-              <p v-if="!isEditing" class="text-sm md:text-base text-gray-400 font-light tracking-wide font-sans">
+              <p v-if="!isEditing" class="text-xs sm:text-sm md:text-base text-gray-400 font-light tracking-wide font-sans">
                  {{ profileData.profile.subSlogan }}
               </p>
               <input v-else v-model="editForm.subSlogan" class="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white" placeholder="Sub Slogan" />
             </div>
 
             <!-- Bio -->
-            <div class="space-y-4 relative">
+            <div class="space-y-3 sm:space-y-4 relative">
                <div class="absolute -left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/50 to-transparent hidden md:block"></div>
                
-               <div v-if="!isEditing">
-                 <p class="text-gray-300 leading-relaxed text-sm md:text-base">
-                    <span class="text-blue-400/80 font-mono text-xs mr-2">[WHO]</span>
+               <div v-if="!isEditing" class="space-y-2 sm:space-y-3">
+                 <p class="text-gray-300 leading-relaxed text-xs sm:text-sm md:text-base">
+                    <span class="text-blue-400/80 font-mono text-[10px] sm:text-xs mr-1 sm:mr-2">[WHO]</span>
                     {{ profileData.profile.bio.who }}
                  </p>
-                 <p class="text-gray-300 leading-relaxed text-sm md:text-base">
-                    <span class="text-purple-400/80 font-mono text-xs mr-2">[WHAT]</span>
+                 <p class="text-gray-300 leading-relaxed text-xs sm:text-sm md:text-base">
+                    <span class="text-purple-400/80 font-mono text-[10px] sm:text-xs mr-1 sm:mr-2">[WHAT]</span>
                     {{ profileData.profile.bio.what }}
                  </p>
-                 <p class="text-gray-400 italic font-serif leading-relaxed text-sm">
+                 <p class="text-gray-400 italic font-serif leading-relaxed text-xs sm:text-sm">
                     "{{ profileData.profile.bio.attitude }}"
                  </p>
                </div>
@@ -119,11 +119,11 @@
             </div>
 
             <!-- Tags -->
-            <div class="flex flex-wrap justify-center md:justify-start gap-2.5">
+            <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2.5">
                <span 
                  v-for="tag in profileData.profile.tags" 
                  :key="tag.text"
-                 class="px-3 py-1 text-xs rounded border bg-transparent"
+                 class="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded border bg-transparent"
                  :class="tag.style"
                >
                  {{ tag.text }}
@@ -131,9 +131,9 @@
             </div>
 
             <!-- Tech Stack -->
-            <div class="pt-4 border-t border-white/5">
-               <div class="text-[10px] text-gray-600 uppercase tracking-widest mb-3">Tech Stack</div>
-               <div class="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-xs font-mono text-gray-500">
+            <div class="pt-3 sm:pt-4 border-t border-white/5">
+               <div class="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-widest mb-2 sm:mb-3">Tech Stack</div>
+               <div class="flex flex-wrap justify-center md:justify-start gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 text-[10px] sm:text-xs font-mono text-gray-500">
                   <span v-for="tech in profileData.profile.techStack" :key="tech" class="hover:text-white transition-colors cursor-default">
                      {{ tech }}
                   </span>

@@ -9,12 +9,25 @@
   color-scheme: dark;
   background-color: #050505;
   color: #ffffff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
@@ -33,4 +46,60 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 640px) {
+  /* Prevent input zoom on iOS */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  /* Better touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Ensure text doesn't break unexpectedly */
+  h1, h2, h3, h4, h5, h6 {
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Improve paragraph readability */
+  p {
+    line-height: 1.7;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  nav {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  
+  section:last-child {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Custom scrollbar for desktop (hidden on mobile) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
