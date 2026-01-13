@@ -138,9 +138,20 @@ import UploadModal from './components/UploadModal.vue'
 import WriteArticleModal from './components/WriteArticleModal.vue'
 import ParticleEffect from './components/ParticleEffect.vue'
 
-// Auth State
-const user = localStorage.getItem('user')
-const isLoggedIn = ref(!!user)
+// Auth State - Validate user is a proper admin
+const isValidAdmin = (userStr: string | null): boolean => {
+  if (!userStr) return false
+  try {
+    const user = JSON.parse(userStr)
+    // Must have id, username, and be admin role
+    return !!(user && user.id && user.username && user.role === 'admin')
+  } catch {
+    return false
+  }
+}
+
+const userStr = localStorage.getItem('user')
+const isLoggedIn = ref(isValidAdmin(userStr))
 const showLoginModal = ref(false)
 const showUploadModal = ref(false)
 const showWriteModal = ref(false)
@@ -171,14 +182,6 @@ const logout = () => {
   isEditingProfile.value = false
   localStorage.removeItem('user')
 }
-
-// Check local storage on mount
-onMounted(() => {
-  const user = localStorage.getItem('user')
-  if (user) {
-    isLoggedIn.value = true
-  }
-})
 
 // Tab State
 const tabs = [
