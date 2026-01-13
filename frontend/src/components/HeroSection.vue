@@ -199,6 +199,10 @@ const emit = defineEmits(['update-profile'])
 const { x, y } = useMouse()
 const { width, height } = useWindowSize()
 
+// Storage keys
+const PROFILE_DATA_KEY = 'blog_profile_data'
+const WECHAT_QR_KEY = 'blog_wechat_qr'
+
 // Try to load avatar from cache to prevent flickering
 const getCachedAvatar = () => {
   try {
@@ -213,10 +217,10 @@ const getCachedAvatar = () => {
 
 // Avatar state management
 const avatarUrl = ref(getCachedAvatar() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
-const avatarLoading = ref(true) 
+const avatarLoading = ref(!getCachedAvatar()) // Only show loading if no cache
 const avatarInput = ref<HTMLInputElement | null>(null)
 const wechatModalOpen = ref(false)
-const wechatQrCode = ref('')
+const wechatQrCode = ref(localStorage.getItem(WECHAT_QR_KEY) || '')
 const currentUserId = ref<number | null>(null) // 新增：存储当前用户的真实 ID
 
 // Preload avatar image to prevent flickering
@@ -264,6 +268,7 @@ const handleAvatarChange = async (e: Event) => {
 
 const handleWechatUpdate = (url: string) => {
   wechatQrCode.value = url
+  localStorage.setItem(WECHAT_QR_KEY, url)
 }
 
 const openWechatModal = () => {
@@ -335,7 +340,20 @@ const initialProfile = {
    }
 }
 
-const profileData = reactive(JSON.parse(JSON.stringify(initialProfile)))
+// Load from cache or use initial
+const getInitialProfile = () => {
+  const cached = localStorage.getItem(PROFILE_DATA_KEY)
+  if (cached) {
+    try {
+      return JSON.parse(cached)
+    } catch (e) {
+      console.error('Failed to parse cached profile', e)
+    }
+  }
+  return JSON.parse(JSON.stringify(initialProfile))
+}
+
+const profileData = reactive(getInitialProfile())
 
 // Edit Form State
 const editForm = reactive({
@@ -352,6 +370,8 @@ const fetchProfile = async () => {
   try {
     const { data } = await userApi.getProfile('admin')
     
+    let profileUpdated = false
+
     // Parse Profile JSON
     if (data.profileJson) {
       try {
@@ -364,6 +384,7 @@ const fetchProfile = async () => {
              { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
              { name: "Wechat", icon: "Wechat", url: "#" }
           ]
+          profileUpdated = true
         }
       } catch (e) {
         console.error('Failed to parse profile JSON', e)
@@ -374,15 +395,28 @@ const fetchProfile = async () => {
     if (data.profileStats) {
       if (typeof data.profileStats === 'string') {
           // Handle case where specific type might be string if coming from raw JSON
-          try { Object.assign(profileData.stats, JSON.parse(data.profileStats)) } catch {}
+          try { 
+            Object.assign(profileData.stats, JSON.parse(data.profileStats)) 
+            profileUpdated = true
+          } catch {}
       } else {
           Object.assign(profileData.stats, data.profileStats)
+          profileUpdated = true
       }
     }
 
     // Load WeChat QR Code
     if (data.wechatQrCode) {
       wechatQrCode.value = data.wechatQrCode
+      localStorage.setItem(WECHAT_QR_KEY, data.wechatQrCode)
+    }
+
+    // Cache the updated profile data
+    if (profileUpdated) {
+      localStorage.setItem(PROFILE_DATA_KEY, JSON.stringify({
+        profile: profileData.profile,
+        stats: profileData.stats
+      }))
     }
 
     // Load Basic Info with avatar preloading to prevent flickering
@@ -392,7 +426,7 @@ const fetchProfile = async () => {
     
     if (data.avatar && data.avatar !== avatarUrl.value) {
       try {
-        avatarLoading.value = true
+        // avatarLoading.value = true // Don't trigger loading for cached images
         await preloadAvatar(data.avatar)
         avatarUrl.value = data.avatar
         editForm.avatar = data.avatar
@@ -412,7 +446,7 @@ const fetchProfile = async () => {
     }
     
     if (data.nickname) {
-      profileData.profile.nickname = data.nickname
+      profileData.nickname = data.nickname // Note: if profileData structure changed, adjust accordingly
       editForm.nickname = data.nickname
     }
     
@@ -443,7 +477,7 @@ watch(profileData, (newVal) => {
 
 // Sync back when saving
 const saveProfile = async () => {
-  // Update local state
+  // Update local state immediately
   Object.assign(profileData.profile, {
     nickname: editForm.nickname,
     slogan: editForm.slogan,
@@ -452,6 +486,12 @@ const saveProfile = async () => {
   })
   Object.assign(profileData.stats, editForm.stats)
   
+  // Persist to local cache immediately
+  localStorage.setItem(PROFILE_DATA_KEY, JSON.stringify({
+    profile: profileData.profile,
+    stats: profileData.stats
+  }))
+
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     // 优先使用接口获取到的实时 ID，其次使用缓存，最后才使用回退

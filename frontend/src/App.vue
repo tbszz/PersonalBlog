@@ -139,7 +139,8 @@ import WriteArticleModal from './components/WriteArticleModal.vue'
 import ParticleEffect from './components/ParticleEffect.vue'
 
 // Auth State
-const isLoggedIn = ref(false)
+const user = localStorage.getItem('user')
+const isLoggedIn = ref(!!user)
 const showLoginModal = ref(false)
 const showUploadModal = ref(false)
 const showWriteModal = ref(false)
