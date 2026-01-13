@@ -305,38 +305,29 @@ const getIcon = (name: string) => {
    }
 }
 
-// Initial Data
+// Initial Data (Skeleton state)
 const initialProfile = {
    profile: {
-     nickname: "邹子",
-     slogan: "天不生邹子",
-     subSlogan: "万古如长夜 | Codes, Camera, and the Infinite Dark",
+     nickname: "Loading...",
+     slogan: "...",
+     subSlogan: "...",
      bio: {
-       who: "一名热衷于构建优雅系统的 Full Stack 开发者。主修 Java 生态与 Vue 前端，致力于将复杂的逻辑转化为丝滑的用户体验。",
-       what: "正在用代码编织逻辑，用镜头捕捉光影。在这里记录技术沉淀，也分享生活瞬间。",
-       attitude: "相信代码能改变世界，但更相信审美决定高度。"
+       who: "...",
+       what: "...",
+       attitude: "..."
      },
-     tags: [
-       { text: "全栈开发者", style: "border-blue-500/30 text-blue-400" },
-       { text: "Java后端", style: "border-red-500/30 text-red-400" },
-       { text: "Vue前端", style: "border-green-500/30 text-green-400" },
-       { text: "摄影师", style: "border-purple-500/30 text-purple-400" },
-       { text: "极简主义", style: "border-gray-500/30 text-gray-400" }
-     ],
-     techStack: [
-       "Java", "Spring Boot", "MyBatis", "MySQL", "Redis",
-       "Vue 3", "TypeScript", "Tailwind CSS", "Docker", "Git"
-     ],
+     tags: [],
+     techStack: [],
      socials: [
-       { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
-       { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
+       { name: "Github", icon: "Github", url: "#" },
+       { name: "Bilibili", icon: "Tv", url: "#" },
        { name: "Wechat", icon: "Wechat", url: "#" } 
      ]
    },
    stats: {
-     articles: "42",
-     albums: "108",
-     years: "5"
+     articles: "-",
+     albums: "-",
+     years: "-"
    }
 }
 
