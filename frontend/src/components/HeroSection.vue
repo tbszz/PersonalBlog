@@ -17,11 +17,17 @@
                 @click="triggerAvatarUpload"
               >
                  <!-- Show loading placeholder while image is loading -->
-                 <div v-if="avatarLoading" class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/20 to-purple-500/20">
-                   <div class="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
+                 <div v-if="avatarLoading || !avatarUrl" class="w-full h-full flex items-center justify-center bg-white/5">
+                   <div v-if="avatarLoading" class="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
+                   <div v-else class="w-full h-full flex items-center justify-center text-gray-600">
+                      <!-- Default placeholder if no avatar -->
+                      <div class="w-full h-full bg-white/10 flex items-center justify-center">
+                        <span class="text-4xl text-white/20 font-serif-sc">?</span>
+                      </div>
+                   </div>
                  </div>
                  <img 
-                   v-show="!avatarLoading"
+                   v-show="!avatarLoading && avatarUrl"
                    :src="isEditing ? editForm.avatar : avatarUrl" 
                    alt="Avatar" 
                    class="w-full h-full object-cover transition-all duration-700 group-hover/avatar:scale-110"
@@ -216,7 +222,7 @@ const getCachedAvatar = () => {
 }
 
 // Avatar state management
-const avatarUrl = ref(getCachedAvatar() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop')
+const avatarUrl = ref(getCachedAvatar() || '')
 const avatarLoading = ref(!getCachedAvatar()) // Only show loading if no cache
 const avatarInput = ref<HTMLInputElement | null>(null)
 const wechatModalOpen = ref(false)

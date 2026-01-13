@@ -148,8 +148,8 @@ const isEditingProfile = ref(false)
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true
-  // Enable edit mode automatically on login
-  isEditingProfile.value = true
+  // Enable edit mode automatically on login -> DISABLED to prevent accidental edits
+  // isEditingProfile.value = true
 }
 
 const handleArticleSuccess = () => {
