@@ -11,7 +11,10 @@
       </div>
       
       <div class="flex items-center gap-4">
-        <button class="px-4 py-1.5 text-xs font-semibold bg-white text-black rounded-full hover:bg-gray-200 transition-colors">
+        <button 
+          @click="showConnectModal = true"
+          class="px-4 py-1.5 text-xs font-semibold bg-white text-black rounded-full hover:bg-gray-200 transition-colors"
+        >
           Connect
         </button>
         
@@ -120,6 +123,14 @@
       @close="showWriteModal = false"
       @success="handleArticleSuccess"
     />
+
+    <!-- Connect/WeChat Modal -->
+    <WechatModal
+      :is-open="showConnectModal"
+      :qr-code-url="wechatQrCode"
+      :is-editing="false"
+      @close="showConnectModal = false"
+    />
   </div>
 </template>
 
@@ -137,6 +148,8 @@ import LoginModal from './components/LoginModal.vue'
 import UploadModal from './components/UploadModal.vue'
 import WriteArticleModal from './components/WriteArticleModal.vue'
 import ParticleEffect from './components/ParticleEffect.vue'
+import WechatModal from './components/WechatModal.vue'
+import { userApi } from './api'
 
 // Auth State - Validate user is a proper admin
 const isValidAdmin = (userStr: string | null): boolean => {
@@ -155,7 +168,9 @@ const isLoggedIn = ref(isValidAdmin(userStr))
 const showLoginModal = ref(false)
 const showUploadModal = ref(false)
 const showWriteModal = ref(false)
+const showConnectModal = ref(false)
 const isEditingProfile = ref(false)
+const wechatQrCode = ref(localStorage.getItem('blog_wechat_qr') || '')
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true
@@ -219,8 +234,21 @@ const cursorStyle = computed(() => ({
   background: `radial-gradient(800px circle at ${x.value}px ${y.value}px, rgba(56, 189, 248, 0.08), transparent 40%)`
 }))
 
-onMounted(() => {
+onMounted(async () => {
   fetchGallery()
+  
+  // Fetch WeChat QR code if not in cache
+  if (!wechatQrCode.value) {
+    try {
+      const { data } = await userApi.getProfile('admin')
+      if (data.wechatQrCode) {
+        wechatQrCode.value = data.wechatQrCode
+        localStorage.setItem('blog_wechat_qr', data.wechatQrCode)
+      }
+    } catch (e) {
+      console.error('Failed to fetch wechat QR code', e)
+    }
+  }
 })
 </script>
 
