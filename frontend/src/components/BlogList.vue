@@ -103,6 +103,7 @@ import { ref, onMounted } from 'vue'
 import { Eye, ThumbsUp, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-vue-next'
 import { articleApi, type Article } from '../api'
 import { marked } from 'marked'
+import { sanitizeHtml } from '../utils/sanitizeHtml'
 
 const props = defineProps<{
   isEditing?: boolean
@@ -112,33 +113,40 @@ const props = defineProps<{
 const expandedArticleId = ref<number | null>(null)
 const expandedContent = ref('')
 const loadingDetail = ref(false)
+let articleRequestSeq = 0
 
 const toggleArticle = async (id: number) => {
   if (expandedArticleId.value === id) {
     // Close if already expanded
+    articleRequestSeq++
     expandedArticleId.value = null
     expandedContent.value = ''
     return
   }
   
   // Expand and fetch full content
+  const requestSeq = ++articleRequestSeq
   expandedArticleId.value = id
   loadingDetail.value = true
   
   try {
     const { data } = await articleApi.getOne(id)
+    if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
     expandedContent.value = data.content || '暂无内容'
   } catch (e) {
+    if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
     console.error('Failed to fetch article detail', e)
     expandedContent.value = '加载失败，请重试'
   } finally {
-    loadingDetail.value = false
+    if (requestSeq === articleRequestSeq && expandedArticleId.value === id) {
+      loadingDetail.value = false
+    }
   }
 }
 
 const renderMarkdown = (content: string) => {
   if (!content) return ''
-  return marked.parse(content)
+  return sanitizeHtml(marked.parse(content, { async: false }))
 }
 
 const posts = ref<Article[]>([])
@@ -148,45 +156,19 @@ const fetchPosts = async () => {
   loading.value = true
   try {
     const { data } = await articleApi.getAll()
-    if (data.articles && data.articles.length > 0) {
-      posts.value = data.articles
-    } else {
-      // Fallback data if API returns empty
-      posts.value = [
-        {
-          id: 1,
-          title: '深入理解 Vue 3 响应式原理与 Proxy',
-          content: '...',
-          summary: '本文将深入源码，探讨 Vue 3 如何利用 ES6 Proxy 实现高效的响应式系统，对比 Vue 2 Object.defineProperty 的局限性。',
-          publishTime: '2023-12-10T10:00:00',
-          category: 'Frontend',
-          viewCount: 1205,
-          likeCount: 45,
-          tags: ['Vue3', 'Source Code'],
-          status: 'published',
-          commentCount: 0
-        },
-        {
-          id: 2,
-          title: 'Spring Boot 3 + GraalVM Native Image 实战',
-          content: '...',
-          summary: '如何将 Spring Boot 应用编译为原生镜像，实现毫秒级启动与极低内存占用。包含踩坑记录与性能对比。',
-          publishTime: '2023-11-28T14:30:00',
-          category: 'Backend',
-          viewCount: 892,
-          likeCount: 32,
-          tags: ['Java', 'GraalVM'],
-          status: 'published',
-          commentCount: 0
-        }
-      ]
-    }
+    posts.value = data.articles || []
   } catch (e) {
     console.error('Failed to fetch articles', e)
   } finally {
     loading.value = false
   }
 }
+
+const prependArticle = (article: Article) => {
+  posts.value = [article, ...posts.value.filter(post => post.id !== article.id)]
+}
+
+defineExpose({ prependArticle })
 
 const handleLike = async (id: number) => {
   try {

@@ -215,15 +215,26 @@ const getCachedAvatar = () => {
     const userStr = localStorage.getItem('user')
     if (userStr) {
       const user = JSON.parse(userStr)
-      return user.avatar
+      return typeof user.avatar === 'string' && user.avatar.trim() ? user.avatar : null
     }
   } catch(e) {}
   return null
 }
 
+const clearCachedAvatar = () => {
+  try {
+    const userStr = localStorage.getItem('user')
+    if (!userStr) return
+    const user = JSON.parse(userStr)
+    delete user.avatar
+    localStorage.setItem('user', JSON.stringify(user))
+  } catch(e) {}
+}
+
 // Avatar state management
-const avatarUrl = ref(getCachedAvatar() || '')
-const avatarLoading = ref(!getCachedAvatar()) // Only show loading if no cache
+const initialAvatar = getCachedAvatar()
+const avatarUrl = ref(initialAvatar || '')
+const avatarLoading = ref(!initialAvatar) // Only show loading if no cache
 const avatarInput = ref<HTMLInputElement | null>(null)
 const wechatModalOpen = ref(false)
 const wechatQrCode = ref(localStorage.getItem(WECHAT_QR_KEY) || '')
@@ -244,7 +255,10 @@ const onAvatarLoad = () => {
 }
 
 const onAvatarError = () => {
-  console.error('Failed to load avatar image')
+  if (!props.isEditing) {
+    avatarUrl.value = ''
+    clearCachedAvatar()
+  }
   avatarLoading.value = false
 }
 
@@ -422,18 +436,21 @@ const fetchProfile = async () => {
     }
     
     if (data.avatar && data.avatar !== avatarUrl.value) {
+      editForm.avatar = data.avatar
       try {
         // avatarLoading.value = true // Don't trigger loading for cached images
         await preloadAvatar(data.avatar)
         avatarUrl.value = data.avatar
-        editForm.avatar = data.avatar
         
         // Update cache
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         user.avatar = data.avatar
         localStorage.setItem('user', JSON.stringify(user))
       } catch (e) {
-        console.error('Failed to preload avatar', e)
+        if (avatarUrl.value === data.avatar) {
+          avatarUrl.value = ''
+        }
+        clearCachedAvatar()
       } finally {
         avatarLoading.value = false
       }
@@ -474,35 +491,21 @@ watch(profileData, (newVal) => {
 
 // Sync back when saving
 const saveProfile = async () => {
-  // Update local state immediately
-  Object.assign(profileData.profile, {
+  const nextProfile = {
+    ...profileData.profile,
     nickname: editForm.nickname,
     slogan: editForm.slogan,
     subSlogan: editForm.subSlogan,
     bio: { ...editForm.bio }
-  })
-  Object.assign(profileData.stats, editForm.stats)
-  
-  // Persist to local cache immediately
-  localStorage.setItem(PROFILE_DATA_KEY, JSON.stringify({
-    profile: profileData.profile,
-    stats: profileData.stats
-  }))
+  }
+  const nextStats = { ...editForm.stats }
 
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    // 优先使用接口获取到的实时 ID，其次使用缓存，最后才使用回退
-    const userId = currentUserId.value || user.id || 1 
+    const userId = currentUserId.value
     
     if (!userId) {
-       console.error("No user ID found")
-       return
-    }
-
-    // 更新本地缓存中的 ID，防止下次加载时 ID 依然是旧的
-    if (currentUserId.value && user.id !== currentUserId.value) {
-      user.id = currentUserId.value
-      localStorage.setItem('user', JSON.stringify(user))
+      throw new Error('No profile ID found')
     }
 
     // Preload avatar before saving to ensure smooth transition
@@ -514,26 +517,30 @@ const saveProfile = async () => {
         console.error('Failed to preload avatar on save', e)
       }
     }
-    
-    avatarUrl.value = editForm.avatar
-    avatarLoading.value = false
 
-    // Construct the JSON for the profile_json column (excluding stats/qrcode which are separate now, or keep them consistent)
-    // We keep 'profile' inside JSON, but 'stats' are separate
     const profileJsonToSave = {
-        profile: profileData.profile
-        // Stats are saved separately
+      profile: nextProfile
     }
 
     await userApi.updateProfile(userId, {
       nickname: editForm.nickname,
       avatar: editForm.avatar,
       profileJson: JSON.stringify(profileJsonToSave),
-      profileStats: editForm.stats,
+      profileStats: nextStats,
       wechatQrCode: wechatQrCode.value
     })
+
+    Object.assign(profileData.profile, nextProfile)
+    Object.assign(profileData.stats, nextStats)
+    avatarUrl.value = editForm.avatar
+    avatarLoading.value = false
+
+    localStorage.setItem(PROFILE_DATA_KEY, JSON.stringify({
+      profile: profileData.profile,
+      stats: profileData.stats
+    }))
     
-    // Update cache with new avatar
+    user.id = userId
     user.avatar = editForm.avatar
     localStorage.setItem('user', JSON.stringify(user))
 

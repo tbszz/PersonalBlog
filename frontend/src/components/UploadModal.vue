@@ -68,6 +68,10 @@
           />
         </div>
         
+        <div v-if="uploadStatus" class="text-gray-400 text-xs">
+          {{ uploadStatus }}
+        </div>
+
         <div v-if="error" class="text-red-400 text-sm">
           {{ error }}
         </div>
@@ -108,6 +112,7 @@ const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const loading = ref(false)
 const error = ref('')
+const uploadStatus = ref('')
 
 const form = reactive({
   type: 'image' as 'image' | 'video',
@@ -125,6 +130,7 @@ const resetForm = () => {
   form.description = ''
   form.type = 'image'
   error.value = ''
+  uploadStatus.value = ''
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -171,7 +177,11 @@ const handleSubmit = async () => {
   
   try {
     // 1. Upload File
+    uploadStatus.value = form.type === 'image' ? 'Optimizing image before upload...' : 'Uploading video...'
     const { data: uploadData } = await galleryApi.upload(selectedFile.value)
+    uploadStatus.value = uploadData.optimized
+      ? `Optimized ${(uploadData.originalSize / 1024 / 1024).toFixed(2)} MB to ${(uploadData.uploadedSize / 1024 / 1024).toFixed(2)} MB. Saving gallery item...`
+      : 'Saving gallery item...'
     
     // 2. Create Gallery Item
     await galleryApi.create({
@@ -183,11 +193,12 @@ const handleSubmit = async () => {
     
     emit('upload-success')
     close()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e.response?.data?.message || e.message || 'Failed to upload file'
+    error.value = e instanceof Error ? e.message : 'Failed to upload file'
   } finally {
     loading.value = false
+    uploadStatus.value = ''
   }
 }
 </script>

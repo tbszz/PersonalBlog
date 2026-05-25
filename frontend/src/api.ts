@@ -1,4 +1,5 @@
 import { supabase } from './lib/supabase'
+import { prepareFileForUpload } from './utils/uploadOptimizer'
 
 // ==================== 类型定义 ====================
 
@@ -29,7 +30,7 @@ export interface GalleryItem {
 export interface Article {
   id: number
   title: string
-  content: string
+  content?: string
   summary: string
   coverImage?: string
   status: string
@@ -75,7 +76,7 @@ export const userApi = {
   async getProfile(username: string): Promise<{ data: User }> {
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, username, nickname, avatar, role, profile_json, profile_stats, wechat_qr_code, created_at')
       .eq('username', username)
       .single()
 
@@ -104,7 +105,7 @@ export const galleryApi = {
   async getAll(): Promise<{ data: GalleryItem[] }> {
     const { data, error } = await supabase
       .from('gallery')
-      .select('*')
+      .select('id, type, url, thumbnail_url, description, width, height, created_at')
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -131,14 +132,20 @@ export const galleryApi = {
     if (error) throw error
   },
 
-  async upload(file: File): Promise<{ data: { url: string } }> {
-    const fileExt = file.name.split('.').pop()
+  async upload(file: File): Promise<{ data: { url: string; optimized: boolean; originalSize: number; uploadedSize: number } }> {
+    const prepared = await prepareFileForUpload(file)
+    const uploadFile = prepared.file
+    const fileExt = uploadFile.name.split('.').pop() || 'bin'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `gallery/${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('uploads')
-      .upload(filePath, file)
+      .upload(filePath, uploadFile, {
+        cacheControl: '31536000',
+        contentType: uploadFile.type || file.type,
+        upsert: false,
+      })
 
     if (uploadError) throw uploadError
 
@@ -146,7 +153,14 @@ export const galleryApi = {
       .from('uploads')
       .getPublicUrl(filePath)
 
-    return { data: { url: publicUrl } }
+    return {
+      data: {
+        url: publicUrl,
+        optimized: prepared.optimized,
+        originalSize: prepared.originalSize,
+        uploadedSize: prepared.uploadedSize,
+      },
+    }
   }
 }
 
@@ -159,7 +173,7 @@ export const articleApi = {
 
     const { data, count, error } = await supabase
       .from('articles')
-      .select('*', { count: 'exact' })
+      .select('id, title, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category', { count: 'exact' })
       .eq('status', 'published')
       .order('publish_time', { ascending: false })
       .range(from, to)
@@ -174,16 +188,13 @@ export const articleApi = {
   },
 
   async getOne(id: number): Promise<{ data: Article }> {
-    // 增加浏览量
-    // 增加浏览量，忽略错误
-    await supabase.rpc('increment_view_count', { article_id: id }).then(({ error }) => {
+    void supabase.rpc('increment_view_count', { article_id: id }).then(({ error }) => {
       if (error) console.error('Failed to increment view count:', error)
     })
 
-
     const { data, error } = await supabase
       .from('articles')
-      .select('*')
+      .select('id, title, content, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, created_at')
       .eq('id', id)
       .single()
 
@@ -257,4 +268,3 @@ export const authApi = {
 }
 
 export default { userApi, galleryApi, articleApi, authApi }
-

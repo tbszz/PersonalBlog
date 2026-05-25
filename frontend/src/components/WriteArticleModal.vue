@@ -58,7 +58,7 @@
               
               <span v-if="isUploading" class="text-xs text-gray-500 flex items-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin" />
-                正在上传...
+                {{ uploadStatus || '正在上传...' }}
               </span>
             </div>
             
@@ -141,6 +141,7 @@ const emit = defineEmits(['close', 'success'])
 
 const isSubmitting = ref(false)
 const isUploading = ref(false)
+const uploadStatus = ref('')
 const contentTextarea = ref<HTMLTextAreaElement | null>(null)
 const uploadedImages = ref<Array<{ url: string; name: string }>>([])
 
@@ -157,9 +158,11 @@ const handleImageUpload = async (e: Event) => {
   
   const file = target.files[0]
   isUploading.value = true
+  uploadStatus.value = '正在压缩图片...'
   
   try {
     const { data } = await galleryApi.upload(file)
+    uploadStatus.value = data.optimized ? '图片已压缩，正在插入正文...' : '正在插入正文...'
     uploadedImages.value.push({
       url: data.url,
       name: file.name
@@ -172,6 +175,7 @@ const handleImageUpload = async (e: Event) => {
     alert('图片上传失败，请重试')
   } finally {
     isUploading.value = false
+    uploadStatus.value = ''
     // Reset input
     target.value = ''
   }
@@ -213,7 +217,7 @@ const handleSubmit = async () => {
       form.summary = form.content.slice(0, 100).replace(/[#*`\[\]!]/g, '').replace(/\(http[^)]+\)/g, '') + '...'
     }
 
-    await articleApi.create(form)
+    const { data } = await articleApi.create(form)
     
     // Reset form
     form.title = ''
@@ -221,7 +225,7 @@ const handleSubmit = async () => {
     form.summary = ''
     uploadedImages.value = []
     
-    emit('success')
+    emit('success', data)
     emit('close')
   } catch (e) {
     console.error('Failed to create article:', e)

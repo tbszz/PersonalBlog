@@ -10,11 +10,13 @@ target/
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/.tmp-tests/
 frontend/.env.local
 frontend/.env.*.local
 
 # IDEs
 .idea/
+.omx/
 *.iml
 .vscode/
 *.sublime-workspace

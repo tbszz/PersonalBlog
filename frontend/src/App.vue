@@ -83,6 +83,7 @@
         <Transition name="fade" mode="out-in">
           <BlogList 
             v-if="currentTab === 'blog'" 
+            ref="blogListRef"
             :key="blogListKey" 
             :is-editing="isEditingProfile"
           />
@@ -135,9 +136,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useMouse } from '@vueuse/core'
-import { galleryApi, type GalleryItem } from './api'
+import { galleryApi, type Article, type GalleryItem } from './api'
 import { Lock, LogOut } from 'lucide-vue-next'
 
 import HeroSection from './components/HeroSection.vue'
@@ -178,16 +179,19 @@ const handleLoginSuccess = () => {
   // isEditingProfile.value = true
 }
 
-const handleArticleSuccess = () => {
+const handleArticleSuccess = async (article: Article) => {
   // Switch to blog tab to see the new article
   currentTab.value = 'blog'
-  // Force reload of blog list component or notify it to refresh
-  // For now, simpler to just trigger a refresh if we had a global store or event bus
-  // But since BlogList fetches on mount, toggling it might work, or we can use a key
-  refreshBlogList()
+  await nextTick()
+  if (blogListRef.value) {
+    blogListRef.value.prependArticle(article)
+  } else {
+    refreshBlogList()
+  }
 }
 
 const blogListKey = ref(0)
+const blogListRef = ref<InstanceType<typeof BlogList> | null>(null)
 const refreshBlogList = () => {
   blogListKey.value++
 }
@@ -211,18 +215,7 @@ const galleryItems = ref<GalleryItem[]>([])
 const fetchGallery = async () => {
   try {
     const { data } = await galleryApi.getAll()
-    if (data && data.length > 0) {
-      galleryItems.value = data
-    } else {
-      galleryItems.value = [
-        { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1701633512398-333f26ec89d6?w=800&q=80', description: 'Cyberpunk aesthetic photography', createdAt: new Date().toISOString() },
-        { id: 2, type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-waves-coming-to-the-beach-5016-large.mp4', thumbnailUrl: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&q=80', description: 'Cinematic drone footage', createdAt: new Date().toISOString() },
-        { id: 3, type: 'image', url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=800&q=80', description: 'High contrast monochrome', createdAt: new Date().toISOString() },
-        { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1695653422715-991525631913?w=800&q=80', description: 'Architectural details', createdAt: new Date().toISOString() },
-        { id: 5, type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4', thumbnailUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80', description: 'Nature calm vibes', createdAt: new Date().toISOString() },
-        { id: 6, type: 'image', url: 'https://images.unsplash.com/photo-1701198548170-c750b3f03b22?w=800&q=80', description: 'Street photography', createdAt: new Date().toISOString() },
-      ]
-    }
+    galleryItems.value = data || []
   } catch (e) {
     console.error('Failed to fetch gallery', e)
   }
