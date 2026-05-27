@@ -57,19 +57,19 @@
                <div class="text-center w-16 sm:w-20"> <!-- Added width for input stability -->
                   <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.articles }}</div>
                   <input v-else v-model="editForm.stats.articles" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
-                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Articles</div>
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">{{ t('profile.articles') }}</div>
                </div>
                <div class="w-px h-8 bg-white/10 self-center"></div>
                <div class="text-center w-16 sm:w-20">
                   <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.albums }}</div>
                   <input v-else v-model="editForm.stats.albums" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
-                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Albums</div>
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">{{ t('profile.albums') }}</div>
                </div>
                <div class="w-px h-8 bg-white/10 self-center"></div>
                <div class="text-center w-16 sm:w-20">
                   <div v-if="!isEditing" class="text-lg sm:text-xl font-bold text-white font-serif-sc">{{ profileData.stats.years }}</div>
                   <input v-else v-model="editForm.stats.years" class="w-full bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center text-white font-bold text-sm" />
-                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">Years</div>
+                  <div class="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-1">{{ t('profile.years') }}</div>
                </div>
             </div>
 
@@ -149,7 +149,7 @@
 
             <!-- Tech Stack -->
             <div class="pt-3 sm:pt-4 border-t border-white/5">
-               <div class="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-widest mb-2 sm:mb-3">Tech Stack</div>
+               <div class="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-widest mb-2 sm:mb-3">{{ t('profile.techStack') }}</div>
                <div class="flex flex-wrap justify-center md:justify-start gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 text-[10px] sm:text-xs font-mono text-gray-500">
                   <span v-for="tech in profileData.profile.techStack" :key="tech" class="hover:text-white transition-colors cursor-default">
                      {{ tech }}
@@ -160,7 +160,7 @@
             <!-- Save Button -->
             <div v-if="isEditing" class="flex justify-end pt-4">
               <button @click="saveProfile" class="px-6 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-gray-200">
-                Save Changes
+                {{ t('profile.saveChanges') }}
               </button>
             </div>
 
@@ -195,6 +195,7 @@ import { useMouse, useWindowSize } from '@vueuse/core'
 import { Github, Tv, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
+import { t } from '../i18n'
 
 const props = defineProps<{
   isEditing: boolean
@@ -328,7 +329,7 @@ const getIcon = (name: string) => {
 // Initial Data (Skeleton state)
 const initialProfile = {
    profile: {
-     nickname: "Loading...",
+     nickname: t('profile.loading'),
      slogan: "...",
      subSlogan: "...",
      bio: {
@@ -341,7 +342,7 @@ const initialProfile = {
      socials: [
        { name: "Github", icon: "Github", url: "#" },
        { name: "Bilibili", icon: "Tv", url: "#" },
-       { name: "Wechat", icon: "Wechat", url: "#" } 
+       { name: "Wechat", icon: "Wechat", url: "#" }
      ]
    },
    stats: {

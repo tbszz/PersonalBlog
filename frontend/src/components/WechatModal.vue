@@ -5,7 +5,7 @@
     
     <!-- Modal -->
     <div class="relative w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl transform transition-all flex flex-col items-center">
-      <h3 class="text-xl font-bold text-white mb-4">微信联系</h3>
+      <h3 class="text-xl font-bold text-white mb-4">{{ t('wechat.title') }}</h3>
       
       <!-- QR Code Display -->
       <div 
@@ -15,22 +15,22 @@
         <img 
           v-if="qrCodeUrl" 
           :src="qrCodeUrl" 
-          alt="Wechat QR Code" 
+          :alt="t('wechat.alt')"
           class="w-full h-full object-cover" 
         />
-        <div v-else class="text-gray-500 text-sm">暂无二维码</div>
+        <div v-else class="text-gray-500 text-sm">{{ t('wechat.empty') }}</div>
 
         <!-- Upload Overlay (Only if editing) -->
         <div 
           v-if="isEditing" 
           class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <span class="text-white text-sm font-medium">点击更换图片</span>
+          <span class="text-white text-sm font-medium">{{ t('wechat.changeImage') }}</span>
         </div>
       </div>
 
       <p class="mt-4 text-gray-400 text-sm text-center">
-        扫一扫上方的二维码添加微信
+        {{ t('wechat.hint') }}
       </p>
 
       <!-- Hidden Input for Upload -->
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { galleryApi } from '../api'
+import { t } from '../i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -89,7 +90,7 @@ const handleUpload = async (e: Event) => {
       emit('update', data.url)
     } catch (e) {
       console.error('Failed to upload QR code', e)
-      alert('图片上传失败，请重试')
+      alert(t('article.uploadFailed'))
     }
   }
 }

@@ -5,21 +5,21 @@
     
     <!-- Modal -->
     <div class="relative w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl p-8 shadow-2xl transform transition-all">
-      <h2 class="text-2xl font-bold text-white mb-6 text-center">Admin Login</h2>
+      <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ t('login.title') }}</h2>
       
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1">Username</label>
+          <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('login.email') }}</label>
           <input 
-            v-model="username" 
-            type="text" 
+            v-model="email"
+            type="email"
             class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white/30 transition-colors"
-            placeholder="admin"
+            :placeholder="t('login.emailPlaceholder')"
           />
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+          <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('login.password') }}</label>
           <input 
             v-model="password" 
             type="password" 
@@ -37,7 +37,7 @@
           class="w-full bg-white text-black font-bold py-2.5 rounded-lg hover:bg-gray-200 transition-colors"
           :disabled="loading"
         >
-          {{ loading ? 'Logging in...' : 'Login' }}
+          {{ loading ? t('login.submitting') : t('login.submit') }}
         </button>
       </form>
     </div>
@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { authApi } from '../api'
+import { t } from '../i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -54,14 +55,14 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'login-success'])
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
 const close = () => {
   emit('close')
-  username.value = ''
+  email.value = ''
   password.value = ''
   error.value = ''
 }
@@ -71,14 +72,14 @@ const handleLogin = async () => {
   error.value = ''
   
   try {
-    const { data } = await authApi.login(username.value, password.value)
+    const { data } = await authApi.login(email.value, password.value)
     
     // Store user info
     localStorage.setItem('user', JSON.stringify(data))
     emit('login-success', data)
     close()
   } catch (e) {
-    error.value = 'Invalid username or password'
+    error.value = t('login.error')
   } finally {
     loading.value = false
   }

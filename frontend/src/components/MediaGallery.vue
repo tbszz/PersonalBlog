@@ -46,7 +46,7 @@
             v-if="isEditing"
             @click.stop="handleDelete(item.id)"
             class="pointer-events-auto p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors"
-            title="Delete"
+            :title="t('gallery.deleteTitle')"
           >
             <Trash2 class="w-4 h-4" />
           </button>
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
 import { type GalleryItem, galleryApi } from '../api'
+import { t } from '../i18n'
 
 defineProps<{
   items: GalleryItem[],
@@ -68,14 +69,14 @@ defineProps<{
 const emit = defineEmits(['delete-success'])
 
 const handleDelete = async (id: number) => {
-  if (!confirm('确定要删除这张图片/视频吗？')) return
+  if (!confirm(t('gallery.deleteConfirm'))) return
   
   try {
     await galleryApi.delete(id)
     emit('delete-success')
   } catch (e) {
     console.error('Failed to delete item', e)
-    alert('删除失败，请重试')
+    alert(t('gallery.deleteFailed'))
   }
 }
 

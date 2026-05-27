@@ -1,21 +1,35 @@
 <template>
-  <div ref="page" class="min-h-screen bg-[#050505] text-white relative font-sans selection:bg-blue-500/30 selection:text-blue-200">
+  <div ref="page" class="min-h-screen bg-[#050505] text-white relative font-sans selection:bg-blue-500/30 selection:text-blue-200" :class="resolvedTheme === 'light' ? 'theme-light' : 'theme-dark'">
     
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-6 py-3 sm:py-5 backdrop-blur-md bg-[#050505]/50 border-b border-white/5 transition-all duration-300">
       <div class="text-base sm:text-lg font-bold tracking-tighter font-serif-sc">邹子</div>
       <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-        <a href="#" class="hover:text-white transition-colors">Home</a>
-        <a href="#" class="hover:text-white transition-colors">Blog</a>
-        <a href="#" class="hover:text-white transition-colors">About</a>
+        <a href="#" class="hover:text-white transition-colors">{{ t('nav.home') }}</a>
+        <a href="#" class="hover:text-white transition-colors">{{ t('nav.blog') }}</a>
+        <a href="#" class="hover:text-white transition-colors">{{ t('nav.about') }}</a>
       </div>
       
       <div class="flex items-center gap-4">
+        <button
+          @click="cycleTheme"
+          class="p-2 text-gray-500 hover:text-white transition-colors"
+          :title="t('nav.theme')"
+        >
+          <component :is="themeIcon" class="w-4 h-4" />
+        </button>
+        <button
+          @click="toggleLocale"
+          class="px-3 py-1.5 text-xs font-semibold border border-white/10 text-gray-300 rounded-full hover:text-white hover:border-white/30 transition-colors"
+          :title="t('nav.language')"
+        >
+          {{ localeNames[currentLocale] }}
+        </button>
         <button 
           @click="showConnectModal = true"
           class="px-4 py-1.5 text-xs font-semibold bg-white text-black rounded-full hover:bg-gray-200 transition-colors"
         >
-          Connect
+          {{ t('nav.connect') }}
         </button>
         
         <!-- Admin Entry -->
@@ -23,7 +37,7 @@
           v-if="!isLoggedIn"
           @click="showLoginModal = true"
           class="p-2 text-gray-500 hover:text-white transition-colors"
-          title="Admin Login"
+          :title="t('nav.adminLogin')"
         >
           <Lock class="w-4 h-4" />
         </button>
@@ -32,12 +46,12 @@
             @click="isEditingProfile = !isEditingProfile"
             class="text-xs text-blue-400 hover:text-blue-300"
           >
-            {{ isEditingProfile ? 'View Mode' : 'Edit Profile' }}
+            {{ isEditingProfile ? t('nav.viewMode') : t('nav.editProfile') }}
           </button>
           <button 
             @click="logout"
             class="p-2 text-gray-500 hover:text-red-400 transition-colors"
-            title="Logout"
+            :title="t('nav.logout')"
           >
             <LogOut class="w-4 h-4" />
           </button>
@@ -59,6 +73,7 @@
         <ActionToolbar 
           @upload="showUploadModal = true" 
           @write="showWriteModal = true"
+          @portfolio="showPortfolioModal = true"
         />
       </div>
 
@@ -73,7 +88,7 @@
             :class="currentTab === tab.id ? 'text-black' : 'text-gray-400 hover:text-white'"
           >
             <span v-if="currentTab === tab.id" class="absolute inset-0 bg-white rounded-full shadow-lg -z-10" layoutId="activeTab"></span>
-            {{ tab.label }}
+            {{ t(tab.labelKey) }}
           </button>
         </div>
       </div>
@@ -87,8 +102,14 @@
             :key="blogListKey" 
             :is-editing="isEditingProfile"
           />
+          <PortfolioGrid
+            v-else-if="currentTab === 'portfolio'"
+            ref="portfolioGridRef"
+            :key="portfolioListKey"
+            :is-editing="isEditingProfile"
+          />
           <MediaGallery 
-            v-else 
+            v-else-if="currentTab === 'gallery'"
             :items="galleryItems" 
             :is-editing="isEditingProfile"
             @delete-success="fetchGallery"
@@ -125,6 +146,13 @@
       @success="handleArticleSuccess"
     />
 
+    <!-- Portfolio Modal -->
+    <PortfolioModal
+      :is-open="showPortfolioModal"
+      @close="showPortfolioModal = false"
+      @success="handlePortfolioSuccess"
+    />
+
     <!-- Connect/WeChat Modal -->
     <WechatModal
       :is-open="showConnectModal"
@@ -138,40 +166,37 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useMouse } from '@vueuse/core'
-import { galleryApi, type Article, type GalleryItem } from './api'
-import { Lock, LogOut } from 'lucide-vue-next'
+import { authApi, galleryApi, type Article, type GalleryItem, type PortfolioItem } from './api'
+import { Lock, LogOut, Monitor, Moon, Sun } from 'lucide-vue-next'
 
 import HeroSection from './components/HeroSection.vue'
 import ActionToolbar from './components/ActionToolbar.vue'
 import BlogList from './components/BlogList.vue'
 import MediaGallery from './components/MediaGallery.vue'
+import PortfolioGrid from './components/PortfolioGrid.vue'
 import LoginModal from './components/LoginModal.vue'
 import UploadModal from './components/UploadModal.vue'
 import WriteArticleModal from './components/WriteArticleModal.vue'
+import PortfolioModal from './components/PortfolioModal.vue'
 import ParticleEffect from './components/ParticleEffect.vue'
 import WechatModal from './components/WechatModal.vue'
 import { userApi } from './api'
+import { currentLocale, initLocale, localeNames, t, toggleLocale } from './i18n'
+import { cycleTheme, initTheme, resolvedTheme, themePreference } from './theme'
 
-// Auth State - Validate user is a proper admin
-const isValidAdmin = (userStr: string | null): boolean => {
-  if (!userStr) return false
-  try {
-    const user = JSON.parse(userStr)
-    // Must have id, username, and be admin role
-    return !!(user && user.id && user.username && user.role === 'admin')
-  } catch {
-    return false
-  }
-}
-
-const userStr = localStorage.getItem('user')
-const isLoggedIn = ref(isValidAdmin(userStr))
+// Auth State
+const isLoggedIn = ref(false)
 const showLoginModal = ref(false)
 const showUploadModal = ref(false)
 const showWriteModal = ref(false)
+const showPortfolioModal = ref(false)
 const showConnectModal = ref(false)
 const isEditingProfile = ref(false)
 const wechatQrCode = ref(localStorage.getItem('blog_wechat_qr') || '')
+const themeIcon = computed(() => {
+  if (themePreference.value === 'system') return Monitor
+  return resolvedTheme.value === 'dark' ? Moon : Sun
+})
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true
@@ -190,22 +215,38 @@ const handleArticleSuccess = async (article: Article) => {
   }
 }
 
+const handlePortfolioSuccess = async (item: PortfolioItem) => {
+  currentTab.value = 'portfolio'
+  await nextTick()
+  if (portfolioGridRef.value) {
+    portfolioGridRef.value.prependItem(item)
+  } else {
+    refreshPortfolioList()
+  }
+}
+
 const blogListKey = ref(0)
 const blogListRef = ref<InstanceType<typeof BlogList> | null>(null)
+const portfolioListKey = ref(0)
+const portfolioGridRef = ref<InstanceType<typeof PortfolioGrid> | null>(null)
 const refreshBlogList = () => {
   blogListKey.value++
 }
+const refreshPortfolioList = () => {
+  portfolioListKey.value++
+}
 
-const logout = () => {
+const logout = async () => {
+  await authApi.logout()
   isLoggedIn.value = false
   isEditingProfile.value = false
-  localStorage.removeItem('user')
 }
 
 // Tab State
 const tabs = [
-  { id: 'blog', label: '文章列表' },
-  { id: 'gallery', label: 'Album' }
+  { id: 'blog', labelKey: 'nav.blog' },
+  { id: 'portfolio', labelKey: 'nav.portfolio' },
+  { id: 'gallery', labelKey: 'nav.gallery' }
 ]
 const currentTab = ref('blog')
 
@@ -228,6 +269,11 @@ const cursorStyle = computed(() => ({
 }))
 
 onMounted(async () => {
+  initTheme()
+  initLocale()
+  const currentUser = await authApi.getCurrentUser()
+  isLoggedIn.value = !!currentUser
+
   fetchGallery()
   
   // Fetch WeChat QR code if not in cache

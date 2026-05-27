@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSupabaseConfig } from '../utils/supabaseConfig'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseConfig = getSupabaseConfig(import.meta.env)
+export const isSupabaseConfigured = supabaseConfig.isConfigured
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables. Please check your .env file.')
+if (!supabaseConfig.isConfigured) {
+    console.warn('Missing Supabase environment variables. Please check your .env file.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey)
 
 // 类型定义
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
@@ -18,6 +19,7 @@ export interface Database {
             users: {
                 Row: {
                     id: number
+                    auth_user_id: string | null
                     username: string
                     password?: string
                     nickname: string | null

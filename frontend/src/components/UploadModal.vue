@@ -5,27 +5,27 @@
     
     <!-- Modal -->
     <div class="relative w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl p-8 shadow-2xl">
-      <h2 class="text-2xl font-bold text-white mb-6">Upload to Gallery</h2>
+      <h2 class="text-2xl font-bold text-white mb-6">{{ t('gallery.uploadTitle') }}</h2>
       
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Type Selection -->
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-2">Type</label>
+          <label class="block text-sm font-medium text-gray-400 mb-2">{{ t('gallery.type') }}</label>
           <div class="flex gap-4">
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" v-model="form.type" value="image" class="accent-blue-500" />
-              <span class="text-white">Image</span>
+              <span class="text-white">{{ t('gallery.image') }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" v-model="form.type" value="video" class="accent-blue-500" />
-              <span class="text-white">Video</span>
+              <span class="text-white">{{ t('gallery.video') }}</span>
             </label>
           </div>
         </div>
 
         <!-- File Input -->
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-2">File</label>
+          <label class="block text-sm font-medium text-gray-400 mb-2">{{ t('gallery.file') }}</label>
           <div 
             class="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:border-white/30 transition-colors cursor-pointer"
             @click="triggerFileInput"
@@ -51,20 +51,20 @@
               </button>
             </div>
             <div v-else class="text-gray-500">
-              <p>Click to upload or drag and drop</p>
-              <p class="text-xs mt-1">Supports JPG, PNG, MP4</p>
+              <p>{{ t('gallery.clickToUpload') }}</p>
+              <p class="text-xs mt-1">{{ t('gallery.supports') }}</p>
             </div>
           </div>
         </div>
 
         <!-- Description -->
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+          <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('gallery.description') }}</label>
           <input 
             v-model="form.description" 
             type="text" 
             class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white/30 transition-colors"
-            placeholder="A short description..."
+            :placeholder="t('gallery.descriptionPlaceholder')"
           />
         </div>
         
@@ -82,14 +82,14 @@
             @click="close"
             class="px-4 py-2 text-gray-400 hover:text-white transition-colors"
           >
-            Cancel
+            {{ t('gallery.cancel') }}
           </button>
           <button 
             type="submit" 
             class="px-6 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="loading || !selectedFile"
           >
-            {{ loading ? 'Uploading...' : 'Upload' }}
+            {{ loading ? t('gallery.uploading') : t('gallery.upload') }}
           </button>
         </div>
       </form>
@@ -100,6 +100,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { galleryApi } from '../api'
+import { t } from '../i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -177,11 +178,11 @@ const handleSubmit = async () => {
   
   try {
     // 1. Upload File
-    uploadStatus.value = form.type === 'image' ? 'Optimizing image before upload...' : 'Uploading video...'
+    uploadStatus.value = form.type === 'image' ? t('gallery.optimizing') : t('gallery.uploadingVideo')
     const { data: uploadData } = await galleryApi.upload(selectedFile.value)
     uploadStatus.value = uploadData.optimized
-      ? `Optimized ${(uploadData.originalSize / 1024 / 1024).toFixed(2)} MB to ${(uploadData.uploadedSize / 1024 / 1024).toFixed(2)} MB. Saving gallery item...`
-      : 'Saving gallery item...'
+      ? `${t('gallery.optimizedPrefix')} ${(uploadData.originalSize / 1024 / 1024).toFixed(2)} MB ${t('gallery.optimizedMiddle')} ${(uploadData.uploadedSize / 1024 / 1024).toFixed(2)} MB. ${t('gallery.saving')}`
+      : t('gallery.saving')
     
     // 2. Create Gallery Item
     await galleryApi.create({
@@ -195,7 +196,7 @@ const handleSubmit = async () => {
     close()
   } catch (e: unknown) {
     console.error(e)
-    error.value = e instanceof Error ? e.message : 'Failed to upload file'
+    error.value = e instanceof Error ? e.message : t('gallery.uploadFailed')
   } finally {
     loading.value = false
     uploadStatus.value = ''

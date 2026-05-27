@@ -6,7 +6,7 @@
       <div class="relative w-full max-w-4xl bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
         <!-- Header -->
         <div class="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between">
-          <h2 class="text-lg sm:text-xl font-bold text-white">写文章</h2>
+          <h2 class="text-lg sm:text-xl font-bold text-white">{{ t('article.writeTitle') }}</h2>
           <button @click="$emit('close')" class="text-gray-400 hover:text-white transition-colors p-1">
             <X class="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
@@ -16,29 +16,29 @@
         <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           <!-- Title -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-400">标题</label>
+            <label class="block text-sm font-medium text-gray-400">{{ t('article.title') }}</label>
             <input 
               v-model="form.title"
               type="text" 
               class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white focus:outline-none focus:border-blue-500 transition-colors text-base sm:text-lg font-medium placeholder-gray-600"
-              placeholder="请输入文章标题..."
+              :placeholder="t('article.titlePlaceholder')"
             />
           </div>
 
           <!-- Summary -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-400">摘要</label>
+            <label class="block text-sm font-medium text-gray-400">{{ t('article.summary') }}</label>
             <textarea 
               v-model="form.summary"
               rows="2"
               class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none placeholder-gray-600 text-sm sm:text-base"
-              placeholder="简短的摘要描述..."
+              :placeholder="t('article.summaryPlaceholder')"
             ></textarea>
           </div>
 
           <!-- Image Upload Section -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-gray-400">插入图片</label>
+            <label class="block text-sm font-medium text-gray-400">{{ t('article.insertImage') }}</label>
             
             <!-- Upload Button -->
             <div class="flex flex-wrap gap-3 items-center">
@@ -46,7 +46,7 @@
                 class="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors text-sm text-gray-300"
               >
                 <ImagePlus class="w-4 h-4" />
-                <span>上传图片</span>
+                <span>{{ t('article.uploadImage') }}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -58,7 +58,7 @@
               
               <span v-if="isUploading" class="text-xs text-gray-500 flex items-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin" />
-                {{ uploadStatus || '正在上传...' }}
+                {{ uploadStatus || t('gallery.uploading') }}
               </span>
             </div>
             
@@ -84,24 +84,24 @@
                   @click="insertImageToContent(img.url)"
                   class="absolute bottom-1 left-1 right-1 text-[10px] bg-black/70 text-white py-1 rounded opacity-0 group-hover/img:opacity-100 transition-opacity text-center"
                 >
-                  插入到正文
+                  {{ t('article.insertIntoContent') }}
                 </button>
               </div>
             </div>
             
             <p class="text-xs text-gray-500">
-              提示：上传图片后，点击图片可将链接插入到正文中
+              {{ t('article.imageHint') }}
             </p>
           </div>
 
           <!-- Content -->
           <div class="space-y-2 flex-1 flex flex-col">
-            <label class="block text-sm font-medium text-gray-400">正文</label>
+            <label class="block text-sm font-medium text-gray-400">{{ t('article.content') }}</label>
             <textarea 
               ref="contentTextarea"
               v-model="form.content"
               class="w-full flex-1 min-h-[250px] sm:min-h-[400px] bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm resize-y placeholder-gray-600"
-              placeholder="# 开始撰写...&#10;&#10;支持插入图片链接，格式：![图片描述](图片URL)"
+              :placeholder="t('article.contentPlaceholder')"
             ></textarea>
           </div>
         </div>
@@ -112,7 +112,7 @@
             @click="$emit('close')"
             class="px-6 py-2 text-gray-400 hover:text-white transition-colors order-2 sm:order-1"
           >
-            取消
+            {{ t('article.cancel') }}
           </button>
           <button 
             @click="handleSubmit"
@@ -120,7 +120,7 @@
             class="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 order-1 sm:order-2"
           >
             <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            <span>发布文章</span>
+            <span>{{ t('article.publish') }}</span>
           </button>
         </div>
       </div>
@@ -132,6 +132,7 @@
 import { ref, reactive } from 'vue'
 import { X, Loader2, ImagePlus } from 'lucide-vue-next'
 import { articleApi, galleryApi } from '../api'
+import { t } from '../i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -158,11 +159,11 @@ const handleImageUpload = async (e: Event) => {
   
   const file = target.files[0]
   isUploading.value = true
-  uploadStatus.value = '正在压缩图片...'
+  uploadStatus.value = t('article.optimizingImage')
   
   try {
     const { data } = await galleryApi.upload(file)
-    uploadStatus.value = data.optimized ? '图片已压缩，正在插入正文...' : '正在插入正文...'
+    uploadStatus.value = data.optimized ? t('article.imageOptimized') : t('article.insertingImage')
     uploadedImages.value.push({
       url: data.url,
       name: file.name
@@ -172,7 +173,7 @@ const handleImageUpload = async (e: Event) => {
     insertImageToContent(data.url)
   } catch (e) {
     console.error('Failed to upload image:', e)
-    alert('图片上传失败，请重试')
+    alert(t('article.uploadFailed'))
   } finally {
     isUploading.value = false
     uploadStatus.value = ''
@@ -229,7 +230,7 @@ const handleSubmit = async () => {
     emit('close')
   } catch (e) {
     console.error('Failed to create article:', e)
-    alert('发布失败，请重试')
+    alert(t('article.publishFailed'))
   } finally {
     isSubmitting.value = false
   }

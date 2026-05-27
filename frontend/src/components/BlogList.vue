@@ -12,7 +12,7 @@
           <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 font-mono">
             <span>{{ formatDate(post.publishTime) }}</span>
             <span class="w-1 h-1 bg-gray-600 rounded-full hidden sm:block"></span>
-            <span>{{ post.category || 'General' }}</span>
+            <span>{{ post.category || t('blog.general') }}</span>
           </div>
           
           <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-white group-hover:text-blue-200 transition-colors">
@@ -29,7 +29,7 @@
             <div v-if="expandedArticleId === post.id" class="article-content">
               <div v-if="loadingDetail" class="text-center py-8 text-gray-500">
                 <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2" />
-                正在加载文章内容...
+                {{ t('blog.loadingDetail') }}
               </div>
               <div v-else 
                    class="prose prose-invert prose-sm sm:prose-base max-w-none text-gray-300 leading-relaxed markdown-body"
@@ -44,7 +44,7 @@
                   class="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors"
                 >
                   <ChevronUp class="w-4 h-4" />
-                  收起文章
+                  {{ t('blog.collapseArticle') }}
                 </button>
               </div>
             </div>
@@ -63,7 +63,7 @@
             <!-- Expand indicator -->
             <div class="flex items-center gap-1.5 text-xs text-blue-400 ml-2">
               <component :is="expandedArticleId === post.id ? ChevronUp : ChevronDown" class="w-3 h-3" />
-              <span>{{ expandedArticleId === post.id ? '收起' : '展开阅读' }}</span>
+              <span>{{ expandedArticleId === post.id ? t('blog.collapse') : t('blog.expand') }}</span>
             </div>
             
             <!-- Delete Button (Only in Edit Mode) -->
@@ -71,10 +71,10 @@
               v-if="isEditing"
               @click.stop="handleDelete(post.id)"
               class="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-400 transition-colors ml-2 sm:ml-4"
-              title="Delete Article"
+              :title="t('blog.deleteTitle')"
             >
               <Trash2 class="w-3 h-3" />
-              <span class="hidden sm:inline">Delete</span>
+              <span class="hidden sm:inline">{{ t('blog.delete') }}</span>
             </button>
 
             <div class="flex flex-wrap gap-2 ml-auto">
@@ -89,11 +89,11 @@
     
     <div v-if="loading" class="text-center py-12 text-gray-500">
       <Loader2 class="w-8 h-8 animate-spin mx-auto mb-2" />
-      Loading articles...
+      {{ t('blog.loading') }}
     </div>
     
     <div v-if="!loading && posts.length === 0" class="text-center py-12 text-gray-500">
-      No articles found.
+      {{ t('blog.empty') }}
     </div>
   </div>
 </template>
@@ -104,6 +104,7 @@ import { Eye, ThumbsUp, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-v
 import { articleApi, type Article } from '../api'
 import { marked } from 'marked'
 import { sanitizeHtml } from '../utils/sanitizeHtml'
+import { currentLocale, t } from '../i18n'
 
 const props = defineProps<{
   isEditing?: boolean
@@ -132,11 +133,11 @@ const toggleArticle = async (id: number) => {
   try {
     const { data } = await articleApi.getOne(id)
     if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
-    expandedContent.value = data.content || '暂无内容'
+    expandedContent.value = data.content || t('blog.emptyContent')
   } catch (e) {
     if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
     console.error('Failed to fetch article detail', e)
-    expandedContent.value = '加载失败，请重试'
+    expandedContent.value = t('blog.loadFailed')
   } finally {
     if (requestSeq === articleRequestSeq && expandedArticleId.value === id) {
       loadingDetail.value = false
@@ -183,20 +184,20 @@ const handleLike = async (id: number) => {
 }
 
 const handleDelete = async (id: number) => {
-  if (!confirm('确定要删除这篇文章吗？此操作无法撤销。')) return
+  if (!confirm(t('blog.deleteConfirm'))) return
   
   try {
     await articleApi.delete(id)
     posts.value = posts.value.filter(p => p.id !== id)
   } catch (e) {
     console.error('Failed to delete article', e)
-    alert('删除失败，请重试')
+    alert(t('blog.deleteFailed'))
   }
 }
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  return new Date(dateStr).toLocaleDateString(currentLocale.value === 'zh' ? 'zh-CN' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'

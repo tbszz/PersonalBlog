@@ -1,10 +1,13 @@
-import { supabase } from './lib/supabase'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { cacheGetJson, cacheRemove, cacheSetJson, getBrowserStorage } from './utils/cache'
+import { parsePortfolioTags } from './utils/portfolio'
 import { prepareFileForUpload } from './utils/uploadOptimizer'
 
 // ==================== 类型定义 ====================
 
 export interface User {
   id: number
+  authUserId?: string
   username: string
   password?: string
   nickname?: string
@@ -42,6 +45,44 @@ export interface Article {
   category?: string
 }
 
+export interface PortfolioItem {
+  id: number
+  title: string
+  description: string
+  coverImage?: string
+  projectUrl?: string
+  sourceUrl?: string
+  tags?: string[]
+  featured: boolean
+  sortOrder: number
+  status: 'published' | 'draft'
+  createdAt: string
+  updatedAt?: string
+}
+
+export type PortfolioInput = Omit<PortfolioItem, 'id' | 'createdAt' | 'updatedAt'>
+
+const CACHE_TTL_MS = 60_000
+const CACHE_KEYS = {
+  profile: (username: string) => `blog:profile:${username}`,
+  gallery: 'blog:gallery',
+  articles: (page: number, size: number) => `blog:articles:${page}:${size}`,
+  article: (id: number) => `blog:article:${id}`,
+  portfolio: 'blog:portfolio',
+}
+
+function getCache<T>(key: string): T | null {
+  return cacheGetJson<T>(getBrowserStorage(), key)
+}
+
+function setCache<T>(key: string, value: T): void {
+  cacheSetJson(getBrowserStorage(), key, value, CACHE_TTL_MS)
+}
+
+function removeCache(key: string): void {
+  cacheRemove(getBrowserStorage(), key)
+}
+
 // ==================== 工具函数 ====================
 
 // 将数据库字段名（snake_case）转换为前端字段名（camelCase）
@@ -70,21 +111,54 @@ function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
   return result
 }
 
+function mapPortfolioItem(item: Record<string, unknown>): PortfolioItem {
+  const mapped = toCamelCase<PortfolioItem>(item)
+  const rawTags = mapped.tags
+
+  return {
+    ...mapped,
+    tags: parsePortfolioTags(Array.isArray(rawTags) ? rawTags : []),
+    featured: Boolean(mapped.featured),
+    sortOrder: Number(mapped.sortOrder || 0),
+    status: mapped.status || 'published',
+  }
+}
+
 // ==================== 用户 API ====================
 
 export const userApi = {
   async getProfile(username: string): Promise<{ data: User }> {
+    if (!isSupabaseConfigured) {
+      return {
+        data: {
+          id: 0,
+          username,
+          nickname: '邹子',
+          role: 'admin',
+          profileStats: { articles: '-', albums: '-', years: '-' },
+        },
+      }
+    }
+
+    const cacheKey = CACHE_KEYS.profile(username)
+    const cached = getCache<User>(cacheKey)
+    if (cached) return { data: cached }
+
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, nickname, avatar, role, profile_json, profile_stats, wechat_qr_code, created_at')
+      .select('id, auth_user_id, username, nickname, avatar, role, profile_json, profile_stats, wechat_qr_code, created_at')
       .eq('username', username)
       .single()
 
     if (error) throw error
-    return { data: toCamelCase<User>(data) }
+    const profile = toCamelCase<User>(data)
+    setCache(cacheKey, profile)
+    return { data: profile }
   },
 
   async updateProfile(id: number, userData: Partial<User>): Promise<{ data: User }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { data, error } = await supabase
       .from('users')
       .update(toSnakeCase(userData as Record<string, unknown>))
@@ -95,7 +169,9 @@ export const userApi = {
     if (!data || data.length === 0) {
       throw new Error('User not found or nothing updated')
     }
-    return { data: toCamelCase<User>(data[0]) }
+    const profile = toCamelCase<User>(data[0])
+    removeCache(CACHE_KEYS.profile(profile.username))
+    return { data: profile }
   }
 }
 
@@ -103,16 +179,25 @@ export const userApi = {
 
 export const galleryApi = {
   async getAll(): Promise<{ data: GalleryItem[] }> {
+    if (!isSupabaseConfigured) return { data: [] }
+
+    const cached = getCache<GalleryItem[]>(CACHE_KEYS.gallery)
+    if (cached) return { data: cached }
+
     const { data, error } = await supabase
       .from('gallery')
       .select('id, type, url, thumbnail_url, description, width, height, created_at')
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return { data: (data || []).map(item => toCamelCase<GalleryItem>(item)) }
+    const items = (data || []).map(item => toCamelCase<GalleryItem>(item))
+    setCache(CACHE_KEYS.gallery, items)
+    return { data: items }
   },
 
   async create(item: Omit<GalleryItem, 'id' | 'createdAt'>): Promise<{ data: GalleryItem }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { data, error } = await supabase
       .from('gallery')
       .insert(toSnakeCase(item as Record<string, unknown>))
@@ -120,19 +205,25 @@ export const galleryApi = {
       .single()
 
     if (error) throw error
+    removeCache(CACHE_KEYS.gallery)
     return { data: toCamelCase<GalleryItem>(data) }
   },
 
   async delete(id: number): Promise<void> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { error } = await supabase
       .from('gallery')
       .delete()
       .eq('id', id)
 
     if (error) throw error
+    removeCache(CACHE_KEYS.gallery)
   },
 
   async upload(file: File): Promise<{ data: { url: string; optimized: boolean; originalSize: number; uploadedSize: number } }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const prepared = await prepareFileForUpload(file)
     const uploadFile = prepared.file
     const fileExt = uploadFile.name.split('.').pop() || 'bin'
@@ -168,6 +259,12 @@ export const galleryApi = {
 
 export const articleApi = {
   async getAll(page = 1, size = 10): Promise<{ data: { articles: Article[], total: number } }> {
+    if (!isSupabaseConfigured) return { data: { articles: [], total: 0 } }
+
+    const cacheKey = CACHE_KEYS.articles(page, size)
+    const cached = getCache<{ articles: Article[], total: number }>(cacheKey)
+    if (cached) return { data: cached }
+
     const from = (page - 1) * size
     const to = from + size - 1
 
@@ -179,18 +276,24 @@ export const articleApi = {
       .range(from, to)
 
     if (error) throw error
-    return {
-      data: {
-        articles: (data || []).map(item => toCamelCase<Article>(item)),
-        total: count || 0
-      }
+    const result = {
+      articles: (data || []).map(item => toCamelCase<Article>(item)),
+      total: count || 0
     }
+    setCache(cacheKey, result)
+    return { data: result }
   },
 
   async getOne(id: number): Promise<{ data: Article }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
+    const cacheKey = CACHE_KEYS.article(id)
     void supabase.rpc('increment_view_count', { article_id: id }).then(({ error }) => {
       if (error) console.error('Failed to increment view count:', error)
     })
+
+    const cached = getCache<Article>(cacheKey)
+    if (cached) return { data: cached }
 
     const { data, error } = await supabase
       .from('articles')
@@ -199,10 +302,14 @@ export const articleApi = {
       .single()
 
     if (error) throw error
-    return { data: toCamelCase<Article>(data) }
+    const article = toCamelCase<Article>(data)
+    setCache(cacheKey, article)
+    return { data: article }
   },
 
   async create(article: Partial<Article>): Promise<{ data: Article }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { data, error } = await supabase
       .from('articles')
       .insert(toSnakeCase(article as Record<string, unknown>))
@@ -210,61 +317,138 @@ export const articleApi = {
       .single()
 
     if (error) throw error
+    removeCache(CACHE_KEYS.articles(1, 10))
     return { data: toCamelCase<Article>(data) }
   },
 
   async delete(id: number): Promise<void> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { error } = await supabase
       .from('articles')
       .delete()
       .eq('id', id)
 
     if (error) throw error
+    removeCache(CACHE_KEYS.articles(1, 10))
+    removeCache(CACHE_KEYS.article(id))
   },
 
   async like(id: number): Promise<void> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
     const { error } = await supabase.rpc('increment_like_count', { article_id: id })
     if (error) throw error
+    removeCache(CACHE_KEYS.articles(1, 10))
+    removeCache(CACHE_KEYS.article(id))
+  }
+}
+
+// ==================== 作品集 API ====================
+
+export const portfolioApi = {
+  async getAll(): Promise<{ data: PortfolioItem[] }> {
+    if (!isSupabaseConfigured) return { data: [] }
+
+    const cached = getCache<PortfolioItem[]>(CACHE_KEYS.portfolio)
+    if (cached) return { data: cached }
+
+    const { data, error } = await supabase
+      .from('portfolio_items')
+      .select('id, title, description, cover_image, project_url, source_url, tags, featured, sort_order, status, created_at, updated_at')
+      .eq('status', 'published')
+      .order('featured', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      if ((error as { code?: string }).code === '42P01') {
+        return { data: [] }
+      }
+      throw error
+    }
+
+    const items = (data || []).map(item => mapPortfolioItem(item))
+    setCache(CACHE_KEYS.portfolio, items)
+    return { data: items }
+  },
+
+  async create(item: PortfolioInput): Promise<{ data: PortfolioItem }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
+    const { data, error } = await supabase
+      .from('portfolio_items')
+      .insert(toSnakeCase({
+        ...item,
+        tags: parsePortfolioTags(item.tags),
+      } as Record<string, unknown>))
+      .select()
+      .single()
+
+    if (error) throw error
+    removeCache(CACHE_KEYS.portfolio)
+    return { data: mapPortfolioItem(data) }
+  },
+
+  async delete(id: number): Promise<void> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+
+    const { error } = await supabase
+      .from('portfolio_items')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    removeCache(CACHE_KEYS.portfolio)
   }
 }
 
 // ==================== 认证 API ====================
 
 export const authApi = {
-  async login(username: string, password: string): Promise<{ data: User }> {
-    // 简单的用户名密码验证（从 users 表查询）
-    // 注意：生产环境建议使用 Supabase Auth
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single()
+  async login(email: string, password: string): Promise<{ data: User }> {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
 
-    if (error || !data) {
-      throw new Error('Invalid username or password')
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error || !authData.user) {
+      throw new Error('Invalid email or password')
     }
 
-    // 简单密码验证（演示用，生产环境应使用哈希）
-    if (data.password && data.password !== password) {
-      throw new Error('Invalid username or password')
-    }
-
-    return { data: toCamelCase<User>(data) }
+    const profile = await this.requireAdminProfile(authData.user.id)
+    return { data: profile }
   },
 
   async getCurrentUser(): Promise<User | null> {
-    const userStr = localStorage.getItem('user')
-    if (!userStr) return null
+    if (!isSupabaseConfigured) return null
+
     try {
-      return JSON.parse(userStr)
+      const { data } = await supabase.auth.getSession()
+      const userId = data.session?.user.id
+      if (!userId) return null
+      return await this.requireAdminProfile(userId)
     } catch {
       return null
     }
   },
 
-  logout(): void {
+  async requireAdminProfile(authUserId: string): Promise<User> {
+    removeCache(CACHE_KEYS.profile('admin'))
+    const { data } = await userApi.getProfile('admin')
+    if (data.role !== 'admin' || data.authUserId !== authUserId) {
+      await supabase.auth.signOut()
+      throw new Error('Current user is not linked to the admin profile')
+    }
+    return data
+  },
+
+  async logout(): Promise<void> {
+    await supabase.auth.signOut()
     localStorage.removeItem('user')
   }
 }
 
-export default { userApi, galleryApi, articleApi, authApi }
+export default { userApi, galleryApi, articleApi, portfolioApi, authApi }
