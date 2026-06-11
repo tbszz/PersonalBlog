@@ -1,5 +1,6 @@
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { cacheGetJson, cacheRemove, cacheSetJson, getBrowserStorage } from './utils/cache'
+import { mergeEnglishBackup, type ContentTranslations } from './utils/contentLocalization'
 import { parsePortfolioTags } from './utils/portfolio'
 import { prepareFileForUpload } from './utils/uploadOptimizer'
 
@@ -28,6 +29,7 @@ export interface GalleryItem {
   width?: number
   height?: number
   createdAt: string
+  translations?: ContentTranslations<Pick<GalleryItem, 'description'>>
 }
 
 export interface Article {
@@ -43,6 +45,7 @@ export interface Article {
   commentCount: number
   tags?: string[]
   category?: string
+  translations?: ContentTranslations<Pick<Article, 'title' | 'summary' | 'content' | 'category' | 'tags'>>
 }
 
 export interface PortfolioItem {
@@ -58,6 +61,7 @@ export interface PortfolioItem {
   status: 'published' | 'draft'
   createdAt: string
   updatedAt?: string
+  translations?: ContentTranslations<Pick<PortfolioItem, 'title' | 'description' | 'tags'>>
 }
 
 export type PortfolioInput = Omit<PortfolioItem, 'id' | 'createdAt' | 'updatedAt'>
@@ -186,7 +190,7 @@ export const galleryApi = {
 
     const { data, error } = await supabase
       .from('gallery')
-      .select('id, type, url, thumbnail_url, description, width, height, created_at')
+      .select('id, type, url, thumbnail_url, description, width, height, translations, created_at')
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -200,7 +204,12 @@ export const galleryApi = {
 
     const { data, error } = await supabase
       .from('gallery')
-      .insert(toSnakeCase(item as Record<string, unknown>))
+      .insert(toSnakeCase({
+        ...item,
+        translations: mergeEnglishBackup(item.translations, {
+          description: item.description,
+        }),
+      } as Record<string, unknown>))
       .select()
       .single()
 
@@ -270,7 +279,7 @@ export const articleApi = {
 
     const { data, count, error } = await supabase
       .from('articles')
-      .select('id, title, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category', { count: 'exact' })
+      .select('id, title, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, tags, translations', { count: 'exact' })
       .eq('status', 'published')
       .order('publish_time', { ascending: false })
       .range(from, to)
@@ -297,7 +306,7 @@ export const articleApi = {
 
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, content, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, created_at')
+      .select('id, title, content, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, tags, translations, created_at')
       .eq('id', id)
       .single()
 
@@ -312,7 +321,16 @@ export const articleApi = {
 
     const { data, error } = await supabase
       .from('articles')
-      .insert(toSnakeCase(article as Record<string, unknown>))
+      .insert(toSnakeCase({
+        ...article,
+        translations: mergeEnglishBackup(article.translations, {
+          title: article.title || '',
+          summary: article.summary || '',
+          content: article.content || '',
+          category: article.category || '',
+          tags: article.tags || [],
+        }),
+      } as Record<string, unknown>))
       .select()
       .single()
 
@@ -355,7 +373,7 @@ export const portfolioApi = {
 
     const { data, error } = await supabase
       .from('portfolio_items')
-      .select('id, title, description, cover_image, project_url, source_url, tags, featured, sort_order, status, created_at, updated_at')
+      .select('id, title, description, cover_image, project_url, source_url, tags, translations, featured, sort_order, status, created_at, updated_at')
       .eq('status', 'published')
       .order('featured', { ascending: false })
       .order('sort_order', { ascending: true })
@@ -381,6 +399,11 @@ export const portfolioApi = {
       .insert(toSnakeCase({
         ...item,
         tags: parsePortfolioTags(item.tags),
+        translations: mergeEnglishBackup(item.translations, {
+          title: item.title,
+          description: item.description,
+          tags: parsePortfolioTags(item.tags),
+        }),
       } as Record<string, unknown>))
       .select()
       .single()

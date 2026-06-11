@@ -104,6 +104,37 @@
               :placeholder="t('article.contentPlaceholder')"
             ></textarea>
           </div>
+
+          <!-- English Backup -->
+          <div class="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 class="text-sm font-semibold text-white">{{ t('article.englishBackup') }}</h3>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-400">{{ t('article.englishTitle') }}</label>
+              <input
+                v-model="englishBackup.title"
+                type="text"
+                class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-600"
+                :placeholder="t('article.englishTitlePlaceholder')"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-400">{{ t('article.englishSummary') }}</label>
+              <textarea
+                v-model="englishBackup.summary"
+                rows="2"
+                class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none placeholder-gray-600"
+                :placeholder="t('article.englishSummaryPlaceholder')"
+              ></textarea>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-400">{{ t('article.englishContent') }}</label>
+              <textarea
+                v-model="englishBackup.content"
+                class="w-full min-h-[180px] bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm resize-y placeholder-gray-600"
+                :placeholder="t('article.englishContentPlaceholder')"
+              ></textarea>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -153,6 +184,12 @@ const form = reactive({
   status: 'published' // Default to published based on requirement
 })
 
+const englishBackup = reactive({
+  title: '',
+  summary: '',
+  content: ''
+})
+
 const handleImageUpload = async (e: Event) => {
   const target = e.target as HTMLInputElement
   if (!target.files || !target.files[0]) return
@@ -183,7 +220,7 @@ const handleImageUpload = async (e: Event) => {
 }
 
 const insertImageToContent = (url: string) => {
-  const imageMarkdown = `\n![图片](${url})\n`
+  const imageMarkdown = `\n![${t('article.imageAlt')}](${url})\n`
   
   const textarea = contentTextarea.value
   if (textarea) {
@@ -218,12 +255,24 @@ const handleSubmit = async () => {
       form.summary = form.content.slice(0, 100).replace(/[#*`\[\]!]/g, '').replace(/\(http[^)]+\)/g, '') + '...'
     }
 
-    const { data } = await articleApi.create(form)
+    const { data } = await articleApi.create({
+      ...form,
+      translations: {
+        en: {
+          title: englishBackup.title.trim() || undefined,
+          summary: englishBackup.summary.trim() || undefined,
+          content: englishBackup.content.trim() || undefined,
+        },
+      },
+    })
     
     // Reset form
     form.title = ''
     form.content = ''
     form.summary = ''
+    englishBackup.title = ''
+    englishBackup.summary = ''
+    englishBackup.content = ''
     uploadedImages.value = []
     
     emit('success', data)

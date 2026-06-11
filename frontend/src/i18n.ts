@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import {
   defaultLocale,
   localeNames,
+  localizeProfile,
   normalizeLocale,
   translate,
   type Locale,
@@ -16,7 +17,7 @@ function readInitialLocale(): Locale {
 }
 
 export const currentLocale = ref<Locale>(readInitialLocale())
-export { localeNames }
+export { localeNames, localizeProfile }
 
 export function setLocale(locale: string): void {
   currentLocale.value = normalizeLocale(locale)

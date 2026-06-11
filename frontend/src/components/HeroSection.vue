@@ -94,19 +94,19 @@
             <div class="space-y-2 sm:space-y-3">
               <div class="flex flex-col md:flex-row items-center md:items-end gap-2 sm:gap-4">
                  <h1 v-if="!isEditing" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white font-serif-sc tracking-tight">
-                    {{ profileData.profile.nickname }}
+                    {{ displayProfile.nickname }}
                  </h1>
                  <input v-else v-model="editForm.nickname" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xl sm:text-2xl w-full md:w-auto text-white text-center md:text-left" />
 
                  <!-- Small Slogan Badge -->
                  <span v-if="!isEditing" class="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs font-medium bg-white/10 text-white/80 border border-white/10 font-xingkai text-sm sm:text-lg tracking-wide transform md:-translate-y-1">
-                    {{ profileData.profile.slogan }}
+                    {{ displayProfile.slogan }}
                  </span>
                  <input v-else v-model="editForm.slogan" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white w-full md:w-auto" placeholder="Slogan" />
               </div>
               
               <p v-if="!isEditing" class="text-xs sm:text-sm md:text-base text-gray-400 font-light tracking-wide font-sans">
-                 {{ profileData.profile.subSlogan }}
+                 {{ displayProfile.subSlogan }}
               </p>
               <input v-else v-model="editForm.subSlogan" class="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white" placeholder="Sub Slogan" />
             </div>
@@ -118,14 +118,14 @@
                <div v-if="!isEditing" class="space-y-2 sm:space-y-3">
                  <p class="text-gray-300 leading-relaxed text-xs sm:text-sm md:text-base">
                     <span class="text-blue-400/80 font-mono text-[10px] sm:text-xs mr-1 sm:mr-2">[WHO]</span>
-                    {{ profileData.profile.bio.who }}
+                    {{ displayProfile.bio.who }}
                  </p>
                  <p class="text-gray-300 leading-relaxed text-xs sm:text-sm md:text-base">
                     <span class="text-purple-400/80 font-mono text-[10px] sm:text-xs mr-1 sm:mr-2">[WHAT]</span>
-                    {{ profileData.profile.bio.what }}
+                    {{ displayProfile.bio.what }}
                  </p>
                  <p class="text-gray-400 italic font-serif leading-relaxed text-xs sm:text-sm">
-                    "{{ profileData.profile.bio.attitude }}"
+                    "{{ displayProfile.bio.attitude }}"
                  </p>
                </div>
                <div v-else class="space-y-2">
@@ -138,7 +138,7 @@
             <!-- Tags -->
             <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2.5">
                <span 
-                 v-for="tag in profileData.profile.tags" 
+                 v-for="tag in displayProfile.tags" 
                  :key="tag.text"
                  class="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded border bg-transparent"
                  :class="tag.style"
@@ -151,7 +151,7 @@
             <div class="pt-3 sm:pt-4 border-t border-white/5">
                <div class="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-widest mb-2 sm:mb-3">{{ t('profile.techStack') }}</div>
                <div class="flex flex-wrap justify-center md:justify-start gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 text-[10px] sm:text-xs font-mono text-gray-500">
-                  <span v-for="tech in profileData.profile.techStack" :key="tech" class="hover:text-white transition-colors cursor-default">
+                  <span v-for="tech in displayProfile.techStack" :key="tech" class="hover:text-white transition-colors cursor-default">
                      {{ tech }}
                   </span>
                </div>
@@ -195,7 +195,7 @@ import { useMouse, useWindowSize } from '@vueuse/core'
 import { Github, Tv, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
-import { t } from '../i18n'
+import { currentLocale, localizeProfile, t } from '../i18n'
 
 const props = defineProps<{
   isEditing: boolean
@@ -366,6 +366,7 @@ const getInitialProfile = () => {
 }
 
 const profileData = reactive(getInitialProfile())
+const displayProfile = computed(() => localizeProfile(profileData.profile, currentLocale.value))
 
 // Edit Form State
 const editForm = reactive({
@@ -461,7 +462,7 @@ const fetchProfile = async () => {
     }
     
     if (data.nickname) {
-      profileData.nickname = data.nickname // Note: if profileData structure changed, adjust accordingly
+      profileData.profile.nickname = data.nickname
       editForm.nickname = data.nickname
     }
     
@@ -492,12 +493,27 @@ watch(profileData, (newVal) => {
 
 // Sync back when saving
 const saveProfile = async () => {
-  const nextProfile = {
+  const nextProfileBase = {
     ...profileData.profile,
     nickname: editForm.nickname,
     slogan: editForm.slogan,
     subSlogan: editForm.subSlogan,
     bio: { ...editForm.bio }
+  }
+  const englishProfileBackup = localizeProfile({
+    nickname: nextProfileBase.nickname,
+    slogan: nextProfileBase.slogan,
+    subSlogan: nextProfileBase.subSlogan,
+    bio: nextProfileBase.bio,
+    tags: nextProfileBase.tags,
+    techStack: nextProfileBase.techStack,
+  }, 'en')
+  const nextProfile = {
+    ...nextProfileBase,
+    locales: {
+      ...profileData.profile.locales,
+      en: englishProfileBackup
+    }
   }
   const nextStats = { ...editForm.stats }
 
@@ -547,7 +563,7 @@ const saveProfile = async () => {
 
   } catch (e) {
     console.error('Failed to save profile', e)
-    alert('保存失败，请重试')
+    alert(t('profile.saveFailed'))
     avatarLoading.value = false
   }
 

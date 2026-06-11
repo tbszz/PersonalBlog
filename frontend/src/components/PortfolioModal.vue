@@ -85,6 +85,35 @@
               />
             </div>
 
+            <div class="space-y-3 sm:col-span-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <h3 class="text-sm font-semibold text-white">{{ t('portfolio.englishBackup') }}</h3>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-400">{{ t('portfolio.englishTitle') }}</label>
+                <input
+                  v-model="englishBackup.title"
+                  type="text"
+                  class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-400">{{ t('portfolio.englishDescription') }}</label>
+                <textarea
+                  v-model="englishBackup.description"
+                  rows="3"
+                  class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                ></textarea>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-400">{{ t('portfolio.englishTags') }}</label>
+                <input
+                  v-model="englishBackup.tags"
+                  type="text"
+                  class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  :placeholder="t('portfolio.tagsHint')"
+                />
+              </div>
+            </div>
+
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-400">{{ t('portfolio.sortOrder') }}</label>
               <input
@@ -154,6 +183,12 @@ const form = reactive({
   sortOrder: 0,
 })
 
+const englishBackup = reactive({
+  title: '',
+  description: '',
+  tags: '',
+})
+
 const resetForm = () => {
   form.title = ''
   form.description = ''
@@ -163,6 +198,9 @@ const resetForm = () => {
   form.tags = ''
   form.featured = false
   form.sortOrder = 0
+  englishBackup.title = ''
+  englishBackup.description = ''
+  englishBackup.tags = ''
   error.value = ''
 }
 
@@ -208,6 +246,13 @@ const handleSubmit = async () => {
       projectUrl: emptyToUndefined(form.projectUrl),
       sourceUrl: emptyToUndefined(form.sourceUrl),
       tags: parsePortfolioTags(form.tags),
+      translations: {
+        en: {
+          title: emptyToUndefined(englishBackup.title),
+          description: emptyToUndefined(englishBackup.description),
+          tags: parsePortfolioTags(englishBackup.tags),
+        },
+      },
       featured: form.featured,
       sortOrder: Number(form.sortOrder) || 0,
       status: 'published',

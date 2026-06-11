@@ -9,8 +9,46 @@ export const localeNames: Record<Locale, string> = {
   en: 'English',
 }
 
+type ProfileBio = {
+  who?: string
+  what?: string
+  attitude?: string
+}
+
+type ProfileTag = {
+  text: string
+  style?: string
+}
+
+export type LocalizableProfile = {
+  nickname?: string
+  slogan?: string
+  subSlogan?: string
+  bio?: ProfileBio
+  tags?: ProfileTag[]
+  techStack?: string[]
+  locales?: Partial<Record<Locale, Partial<LocalizableProfile>>>
+  i18n?: Partial<Record<Locale, Partial<LocalizableProfile>>>
+}
+
+const profileTextTranslations: Record<string, string> = {
+  '邹子': 'Zouzi',
+  '囿于昼夜': 'Bound by Day and Night',
+  '流浪于山川湖海，囿于昼夜厨房与爱': 'Wandering through mountains, rivers, lakes, and seas; held by day, night, kitchens, and love.',
+  '建筑学生 / 前端开发者 / 设计爱好者': 'Architecture student / Frontend developer / Design enthusiast',
+  '热衷于用代码构建具有东方美学的数字空间，探索技术与人文的交界。': 'I build digital spaces with Eastern aesthetics through code, exploring where technology and the humanities meet.',
+  '保持热爱，奔赴山海。': 'Stay passionate and keep moving toward vast horizons.',
+  '建筑设计': 'Architecture Design',
+  '东方美学': 'Eastern Aesthetics',
+  '前端开发': 'Frontend Development',
+  '摄影': 'Photography',
+  '设计': 'Design',
+  '代码': 'Code',
+}
+
 export const translations = {
   zh: {
+    'brand.name': '邹子',
     'nav.home': '首页',
     'nav.blog': '文章列表',
     'nav.portfolio': '作品集',
@@ -33,6 +71,7 @@ export const translations = {
     'profile.saveChanges': '保存修改',
     'profile.loading': '加载中...',
     'profile.placeholder': '未填写',
+    'profile.saveFailed': '保存失败，请重试',
     'blog.general': '默认分类',
     'blog.loading': '正在加载文章...',
     'blog.empty': '还没有文章。',
@@ -59,6 +98,10 @@ export const translations = {
     'portfolio.modalTitle': '添加作品',
     'portfolio.title': '作品标题',
     'portfolio.description': '作品描述',
+    'portfolio.englishBackup': '英文备份',
+    'portfolio.englishTitle': '英文标题',
+    'portfolio.englishDescription': '英文描述',
+    'portfolio.englishTags': '英文标签',
     'portfolio.projectUrl': '作品链接',
     'portfolio.sourceUrl': '源码链接',
     'portfolio.coverImage': '封面图',
@@ -79,6 +122,8 @@ export const translations = {
     'gallery.supports': '支持 JPG、PNG、MP4',
     'gallery.description': '描述',
     'gallery.descriptionPlaceholder': '一句简短描述...',
+    'gallery.englishDescription': '英文描述',
+    'gallery.englishDescriptionPlaceholder': 'English description...',
     'gallery.cancel': '取消',
     'gallery.upload': '上传',
     'gallery.uploading': '正在上传...',
@@ -104,6 +149,13 @@ export const translations = {
     'article.titlePlaceholder': '请输入文章标题...',
     'article.summary': '摘要',
     'article.summaryPlaceholder': '简短的摘要描述...',
+    'article.englishBackup': '英文备份',
+    'article.englishTitle': '英文标题',
+    'article.englishTitlePlaceholder': 'English article title...',
+    'article.englishSummary': '英文摘要',
+    'article.englishSummaryPlaceholder': 'English summary...',
+    'article.englishContent': '英文正文',
+    'article.englishContentPlaceholder': '# Start writing in English...',
     'article.insertImage': '插入图片',
     'article.uploadImage': '上传图片',
     'article.optimizingImage': '正在压缩图片...',
@@ -111,6 +163,7 @@ export const translations = {
     'article.imageOptimized': '图片已压缩，正在插入正文...',
     'article.insertIntoContent': '插入到正文',
     'article.imageHint': '提示：上传图片后，点击图片可将链接插入到正文中',
+    'article.imageAlt': '图片',
     'article.content': '正文',
     'article.contentPlaceholder': '# 开始撰写...\n\n支持插入图片链接，格式：![图片描述](图片URL)',
     'article.cancel': '取消',
@@ -124,6 +177,7 @@ export const translations = {
     'wechat.alt': '微信二维码',
   },
   en: {
+    'brand.name': 'Zouzi',
     'nav.home': 'Home',
     'nav.blog': 'Blog',
     'nav.portfolio': 'Portfolio',
@@ -146,6 +200,7 @@ export const translations = {
     'profile.saveChanges': 'Save changes',
     'profile.loading': 'Loading...',
     'profile.placeholder': 'Not set',
+    'profile.saveFailed': 'Failed to save. Please retry.',
     'blog.general': 'General',
     'blog.loading': 'Loading articles...',
     'blog.empty': 'No articles found.',
@@ -172,6 +227,10 @@ export const translations = {
     'portfolio.modalTitle': 'Add portfolio item',
     'portfolio.title': 'Title',
     'portfolio.description': 'Description',
+    'portfolio.englishBackup': 'English backup',
+    'portfolio.englishTitle': 'English title',
+    'portfolio.englishDescription': 'English description',
+    'portfolio.englishTags': 'English tags',
     'portfolio.projectUrl': 'Project URL',
     'portfolio.sourceUrl': 'Source URL',
     'portfolio.coverImage': 'Cover image',
@@ -192,6 +251,8 @@ export const translations = {
     'gallery.supports': 'Supports JPG, PNG, MP4',
     'gallery.description': 'Description',
     'gallery.descriptionPlaceholder': 'A short description...',
+    'gallery.englishDescription': 'English description',
+    'gallery.englishDescriptionPlaceholder': 'English description...',
     'gallery.cancel': 'Cancel',
     'gallery.upload': 'Upload',
     'gallery.uploading': 'Uploading...',
@@ -217,6 +278,13 @@ export const translations = {
     'article.titlePlaceholder': 'Enter article title...',
     'article.summary': 'Summary',
     'article.summaryPlaceholder': 'A short summary...',
+    'article.englishBackup': 'English backup',
+    'article.englishTitle': 'English title',
+    'article.englishTitlePlaceholder': 'English article title...',
+    'article.englishSummary': 'English summary',
+    'article.englishSummaryPlaceholder': 'English summary...',
+    'article.englishContent': 'English content',
+    'article.englishContentPlaceholder': '# Start writing in English...',
     'article.insertImage': 'Insert image',
     'article.uploadImage': 'Upload image',
     'article.optimizingImage': 'Optimizing image...',
@@ -224,6 +292,7 @@ export const translations = {
     'article.imageOptimized': 'Image optimized, inserting into content...',
     'article.insertIntoContent': 'Insert into content',
     'article.imageHint': 'After upload, click an image to insert it into the article.',
+    'article.imageAlt': 'Image',
     'article.content': 'Content',
     'article.contentPlaceholder': '# Start writing...\n\nImages are supported: ![Alt text](Image URL)',
     'article.cancel': 'Cancel',
@@ -252,4 +321,41 @@ export function translate(key: string, locale: string | null | undefined): strin
   const fallback = translations[defaultLocale] as Record<string, string>
 
   return byLocale[key] ?? fallback[key] ?? key
+}
+
+function localizeProfileText(value: string | undefined, locale: Locale): string | undefined {
+  if (locale !== 'en' || !value) return value
+  return profileTextTranslations[value] ?? value
+}
+
+function localizeTag(tag: ProfileTag, locale: Locale): ProfileTag {
+  return {
+    ...tag,
+    text: localizeProfileText(tag.text, locale) ?? tag.text,
+  }
+}
+
+export function localizeProfile<T extends LocalizableProfile>(profile: T, locale: string | null | undefined): T {
+  const normalized = normalizeLocale(locale)
+  if (normalized === defaultLocale) return profile
+
+  const localizedProfile = profile.locales?.[normalized] ?? profile.i18n?.[normalized] ?? {}
+  const localizedBio = localizedProfile.bio ?? {}
+
+  return {
+    ...profile,
+    ...localizedProfile,
+    nickname: localizedProfile.nickname ?? localizeProfileText(profile.nickname, normalized),
+    slogan: localizedProfile.slogan ?? localizeProfileText(profile.slogan, normalized),
+    subSlogan: localizedProfile.subSlogan ?? localizeProfileText(profile.subSlogan, normalized),
+    bio: {
+      ...profile.bio,
+      ...localizedBio,
+      who: localizedBio.who ?? localizeProfileText(profile.bio?.who, normalized),
+      what: localizedBio.what ?? localizeProfileText(profile.bio?.what, normalized),
+      attitude: localizedBio.attitude ?? localizeProfileText(profile.bio?.attitude, normalized),
+    },
+    tags: localizedProfile.tags ?? profile.tags?.map(tag => localizeTag(tag, normalized)),
+    techStack: localizedProfile.techStack ?? profile.techStack,
+  }
 }

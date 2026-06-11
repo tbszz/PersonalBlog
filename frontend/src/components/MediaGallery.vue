@@ -1,7 +1,7 @@
 <template>
   <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
     <div 
-      v-for="item in items" 
+      v-for="item in localizedItems" 
       :key="item.id" 
       class="break-inside-avoid group relative rounded-xl overflow-hidden bg-neutral-900/50 cursor-pointer transform transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl"
     >
@@ -57,16 +57,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
 import { type GalleryItem, galleryApi } from '../api'
-import { t } from '../i18n'
+import { currentLocale, t } from '../i18n'
+import { localizeGalleryItem } from '../utils/contentLocalization'
 
-defineProps<{
+const props = defineProps<{
   items: GalleryItem[],
   isEditing?: boolean
 }>()
 
 const emit = defineEmits(['delete-success'])
+const localizedItems = computed(() => props.items.map(item => localizeGalleryItem(item, currentLocale.value) as GalleryItem))
 
 const handleDelete = async (id: number) => {
   if (!confirm(t('gallery.deleteConfirm'))) return

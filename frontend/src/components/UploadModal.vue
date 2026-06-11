@@ -67,6 +67,16 @@
             :placeholder="t('gallery.descriptionPlaceholder')"
           />
         </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('gallery.englishDescription') }}</label>
+          <input
+            v-model="englishBackup.description"
+            type="text"
+            class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white/30 transition-colors"
+            :placeholder="t('gallery.englishDescriptionPlaceholder')"
+          />
+        </div>
         
         <div v-if="uploadStatus" class="text-gray-400 text-xs">
           {{ uploadStatus }}
@@ -120,6 +130,10 @@ const form = reactive({
   description: ''
 })
 
+const englishBackup = reactive({
+  description: ''
+})
+
 const close = () => {
   emit('close')
   resetForm()
@@ -130,6 +144,7 @@ const resetForm = () => {
   previewUrl.value = ''
   form.description = ''
   form.type = 'image'
+  englishBackup.description = ''
   error.value = ''
   uploadStatus.value = ''
   if (fileInput.value) fileInput.value.value = ''
@@ -189,6 +204,11 @@ const handleSubmit = async () => {
       type: form.type,
       url: uploadData.url,
       description: form.description,
+      translations: {
+        en: {
+          description: englishBackup.description.trim() || undefined,
+        },
+      },
       thumbnailUrl: form.type === 'video' ? uploadData.url : undefined // Use same URL for video poster for now
     })
     

@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
     <article
-      v-for="item in items"
+      v-for="item in localizedItems"
       :key="item.id"
       class="group relative overflow-hidden rounded-xl border border-white/5 bg-neutral-900/30 transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:bg-white/5"
     >
@@ -102,16 +102,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ExternalLink, Github, Loader2, Star, Trash2 } from 'lucide-vue-next'
 import { portfolioApi, type PortfolioItem } from '../api'
 import { t } from '../i18n'
+import { currentLocale } from '../i18n'
+import { localizePortfolioItem } from '../utils/contentLocalization'
 
 defineProps<{
   isEditing?: boolean
 }>()
 
 const items = ref<PortfolioItem[]>([])
+const localizedItems = computed(() => items.value.map(item => localizePortfolioItem(item, currentLocale.value) as PortfolioItem))
 const loading = ref(false)
 
 const fetchItems = async () => {

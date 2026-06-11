@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-1 gap-6">
     <article 
-      v-for="post in posts" 
+      v-for="post in localizedPosts" 
       :key="post.id"
       class="group relative bg-neutral-900/30 border border-white/5 rounded-xl p-4 sm:p-6 md:p-8 hover:bg-white/5 hover:border-white/10 transition-all duration-300 cursor-pointer"
       :class="{ 'border-blue-500/30 bg-blue-500/5': expandedArticleId === post.id }"
@@ -33,7 +33,7 @@
               </div>
               <div v-else 
                    class="prose prose-invert prose-sm sm:prose-base max-w-none text-gray-300 leading-relaxed markdown-body"
-                   v-html="renderMarkdown(expandedContent)"
+                   v-html="renderMarkdown(localizedExpandedContent)"
               >
               </div>
               
@@ -78,7 +78,7 @@
             </button>
 
             <div class="flex flex-wrap gap-2 ml-auto">
-              <span v-for="tag in (post.tags || [])" :key="tag" class="px-2 py-0.5 rounded text-[10px] bg-white/5 text-gray-400 border border-white/5">
+                <span v-for="tag in (post.tags || [])" :key="tag" class="px-2 py-0.5 rounded text-[10px] bg-white/5 text-gray-400 border border-white/5">
                 #{{ tag }}
               </span>
             </div>
@@ -99,12 +99,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { Eye, ThumbsUp, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-vue-next'
 import { articleApi, type Article } from '../api'
 import { marked } from 'marked'
 import { sanitizeHtml } from '../utils/sanitizeHtml'
 import { currentLocale, t } from '../i18n'
+import { localizeArticle } from '../utils/contentLocalization'
 
 const props = defineProps<{
   isEditing?: boolean
@@ -112,7 +113,7 @@ const props = defineProps<{
 
 // Expanded article state
 const expandedArticleId = ref<number | null>(null)
-const expandedContent = ref('')
+const expandedArticle = ref<Article | null>(null)
 const loadingDetail = ref(false)
 let articleRequestSeq = 0
 
@@ -121,7 +122,7 @@ const toggleArticle = async (id: number) => {
     // Close if already expanded
     articleRequestSeq++
     expandedArticleId.value = null
-    expandedContent.value = ''
+    expandedArticle.value = null
     return
   }
   
@@ -133,11 +134,21 @@ const toggleArticle = async (id: number) => {
   try {
     const { data } = await articleApi.getOne(id)
     if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
-    expandedContent.value = data.content || t('blog.emptyContent')
+    expandedArticle.value = data
   } catch (e) {
     if (requestSeq !== articleRequestSeq || expandedArticleId.value !== id) return
     console.error('Failed to fetch article detail', e)
-    expandedContent.value = t('blog.loadFailed')
+    expandedArticle.value = {
+      id,
+      title: '',
+      content: t('blog.loadFailed'),
+      summary: '',
+      status: 'published',
+      publishTime: '',
+      viewCount: 0,
+      likeCount: 0,
+      commentCount: 0,
+    }
   } finally {
     if (requestSeq === articleRequestSeq && expandedArticleId.value === id) {
       loadingDetail.value = false
@@ -151,6 +162,12 @@ const renderMarkdown = (content: string) => {
 }
 
 const posts = ref<Article[]>([])
+const localizedPosts = computed(() => posts.value.map(post => localizeArticle(post, currentLocale.value) as Article))
+const localizedExpandedContent = computed(() => {
+  if (!expandedArticle.value) return ''
+  const article = localizeArticle(expandedArticle.value, currentLocale.value) as Article
+  return article.content || t('blog.emptyContent')
+})
 const loading = ref(false)
 
 const fetchPosts = async () => {

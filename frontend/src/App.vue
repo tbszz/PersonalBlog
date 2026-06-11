@@ -3,7 +3,7 @@
     
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-6 py-3 sm:py-5 backdrop-blur-md bg-[#050505]/50 border-b border-white/5 transition-all duration-300">
-      <div class="text-base sm:text-lg font-bold tracking-tighter font-serif-sc">邹子</div>
+      <div class="text-base sm:text-lg font-bold tracking-tighter font-serif-sc">{{ t('brand.name') }}</div>
       <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
         <a href="#" class="hover:text-white transition-colors">{{ t('nav.home') }}</a>
         <a href="#" class="hover:text-white transition-colors">{{ t('nav.blog') }}</a>
