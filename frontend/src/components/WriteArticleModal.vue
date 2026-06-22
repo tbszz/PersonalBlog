@@ -22,6 +22,7 @@
               type="text" 
               class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white focus:outline-none focus:border-blue-500 transition-colors text-base sm:text-lg font-medium placeholder-gray-600"
               :placeholder="t('article.titlePlaceholder')"
+              required
             />
           </div>
 
@@ -33,6 +34,7 @@
               rows="2"
               class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none placeholder-gray-600 text-sm sm:text-base"
               :placeholder="t('article.summaryPlaceholder')"
+              required
             ></textarea>
           </div>
 
@@ -115,6 +117,7 @@
                 type="text"
                 class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-600"
                 :placeholder="t('article.englishTitlePlaceholder')"
+                required
               />
             </div>
             <div class="space-y-2">
@@ -124,6 +127,7 @@
                 rows="2"
                 class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none placeholder-gray-600"
                 :placeholder="t('article.englishSummaryPlaceholder')"
+                required
               ></textarea>
             </div>
             <div class="space-y-2">
@@ -132,6 +136,7 @@
                 v-model="englishBackup.content"
                 class="w-full min-h-[180px] bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm resize-y placeholder-gray-600"
                 :placeholder="t('article.englishContentPlaceholder')"
+                required
               ></textarea>
             </div>
           </div>
@@ -147,7 +152,7 @@
           </button>
           <button 
             @click="handleSubmit"
-            :disabled="isSubmitting || !form.title || !form.content"
+            :disabled="isSubmitting || !canSubmit"
             class="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 order-1 sm:order-2"
           >
             <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
@@ -160,10 +165,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { computed, ref, reactive } from 'vue'
 import { X, Loader2, ImagePlus } from 'lucide-vue-next'
 import { articleApi, galleryApi } from '../api'
 import { t } from '../i18n'
+import { hasCjk } from '../utils/contentLocalization'
 
 const props = defineProps<{
   isOpen: boolean
@@ -189,6 +195,14 @@ const englishBackup = reactive({
   summary: '',
   content: ''
 })
+
+const isValidEnglish = (value: string) => Boolean(value.trim()) && !hasCjk(value)
+const canSubmit = computed(() => (
+  Boolean(form.title.trim() && form.summary.trim() && form.content.trim()) &&
+  isValidEnglish(englishBackup.title) &&
+  isValidEnglish(englishBackup.summary) &&
+  isValidEnglish(englishBackup.content)
+))
 
 const handleImageUpload = async (e: Event) => {
   const target = e.target as HTMLInputElement
@@ -245,7 +259,10 @@ const removeImage = (index: number) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.title || !form.content) return
+  if (!canSubmit.value) {
+    alert(t('article.englishRequired'))
+    return
+  }
   
   try {
     isSubmitting.value = true

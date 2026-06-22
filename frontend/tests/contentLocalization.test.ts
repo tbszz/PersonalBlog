@@ -2,9 +2,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   buildEnglishBackup,
+  hasCompleteEnglishBackup,
   localizeArticle,
   localizeGalleryItem,
   localizePortfolioItem,
+  requireEnglishBackup,
 } from '../src/utils/contentLocalization.js'
 
 test('localizeArticle uses the English cached backup for list and detail fields', () => {
@@ -44,6 +46,15 @@ test('localizeArticle uses the English cached backup for list and detail fields'
     },
   )
   assert.equal(localizeArticle(article, 'zh').title, '中文标题')
+})
+
+test('English backup validation rejects untranslated Chinese content', () => {
+  const fields = { title: '一篇新文章', content: '这是正文' }
+
+  assert.equal(hasCompleteEnglishBackup(fields, { en: { title: 'A new article', content: 'Body text' } }), true)
+  assert.equal(hasCompleteEnglishBackup(fields, { en: { title: '一篇新文章', content: 'Body text' } }), false)
+  assert.equal(hasCompleteEnglishBackup({ tags: ['设计', '代码'] }, { en: { tags: ['Design'] } }), false)
+  assert.throws(() => requireEnglishBackup(fields, undefined), /complete English translation/)
 })
 
 test('localizePortfolioItem uses cached English title, description, and tags', () => {

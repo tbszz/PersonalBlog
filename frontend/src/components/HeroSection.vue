@@ -135,6 +135,20 @@
                </div>
             </div>
 
+            <div v-if="isEditing" class="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left">
+              <h2 class="text-sm font-semibold text-white">{{ t('profile.englishBackup') }}</h2>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input v-model="englishEditForm.nickname" class="bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white" placeholder="English name" />
+                <input v-model="englishEditForm.slogan" class="bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white" placeholder="English slogan" />
+              </div>
+              <input v-model="englishEditForm.subSlogan" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white" placeholder="English subtitle" />
+              <textarea v-model="englishEditForm.bio.who" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white h-20" placeholder="Who I am in English"></textarea>
+              <textarea v-model="englishEditForm.bio.what" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white h-20" placeholder="What I do in English"></textarea>
+              <textarea v-model="englishEditForm.bio.attitude" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white h-16" placeholder="English attitude"></textarea>
+              <input v-model="englishEditForm.tags" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white" placeholder="English tags, separated by commas" />
+              <input v-model="englishEditForm.techStack" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white" placeholder="English tech stack, separated by commas" />
+            </div>
+
             <!-- Tags -->
             <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2.5">
                <span 
@@ -196,6 +210,7 @@ import { Github, Tv, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
 import { currentLocale, localizeProfile, t } from '../i18n'
+import { hasCompleteEnglishBackup } from '../utils/contentLocalization'
 
 const props = defineProps<{
   isEditing: boolean
@@ -378,6 +393,20 @@ const editForm = reactive({
   stats: { ...profileData.stats }
 })
 
+const getEnglishProfileDraft = () => {
+  const localized = localizeProfile(profileData.profile, 'en')
+  return {
+    nickname: localized.nickname || '',
+    slogan: localized.slogan || '',
+    subSlogan: localized.subSlogan || '',
+    bio: { ...localized.bio },
+    tags: (localized.tags || []).map((tag: { text: string }) => tag.text).join(', '),
+    techStack: (localized.techStack || []).join(', '),
+  }
+}
+
+const englishEditForm = reactive(getEnglishProfileDraft())
+
 // Load Profile from API
 const fetchProfile = async () => {
   try {
@@ -471,6 +500,7 @@ const fetchProfile = async () => {
     editForm.subSlogan = profileData.profile.subSlogan
     editForm.bio = { ...profileData.profile.bio }
     editForm.stats = { ...profileData.stats }
+    Object.assign(englishEditForm, getEnglishProfileDraft())
 
   } catch (e) {
     console.error('Failed to fetch profile', e)
@@ -489,6 +519,7 @@ watch(profileData, (newVal) => {
   editForm.subSlogan = newVal.profile.subSlogan
   editForm.bio = { ...newVal.profile.bio }
   editForm.stats = { ...newVal.stats }
+  Object.assign(englishEditForm, getEnglishProfileDraft())
 }, { deep: true })
 
 // Sync back when saving
@@ -500,14 +531,46 @@ const saveProfile = async () => {
     subSlogan: editForm.subSlogan,
     bio: { ...editForm.bio }
   }
-  const englishProfileBackup = localizeProfile({
+  const englishTags = englishEditForm.tags.split(',').map((value: string) => value.trim()).filter(Boolean)
+  const englishProfileBackup = {
+    nickname: englishEditForm.nickname.trim(),
+    slogan: englishEditForm.slogan.trim(),
+    subSlogan: englishEditForm.subSlogan.trim(),
+    bio: {
+      who: englishEditForm.bio.who.trim(),
+      what: englishEditForm.bio.what.trim(),
+      attitude: englishEditForm.bio.attitude.trim(),
+    },
+    tags: nextProfileBase.tags.map((tag: { text: string; style: string }, index: number) => ({
+      ...tag,
+      text: englishTags[index] || '',
+    })),
+    techStack: englishEditForm.techStack.split(',').map((value: string) => value.trim()).filter(Boolean),
+  }
+  const profileSourceFields = {
     nickname: nextProfileBase.nickname,
     slogan: nextProfileBase.slogan,
     subSlogan: nextProfileBase.subSlogan,
-    bio: nextProfileBase.bio,
-    tags: nextProfileBase.tags,
+    who: nextProfileBase.bio.who,
+    what: nextProfileBase.bio.what,
+    attitude: nextProfileBase.bio.attitude,
+    tags: nextProfileBase.tags.map((tag: { text: string }) => tag.text),
     techStack: nextProfileBase.techStack,
-  }, 'en')
+  }
+  const profileEnglishFields = {
+    nickname: englishProfileBackup.nickname,
+    slogan: englishProfileBackup.slogan,
+    subSlogan: englishProfileBackup.subSlogan,
+    who: englishProfileBackup.bio.who,
+    what: englishProfileBackup.bio.what,
+    attitude: englishProfileBackup.bio.attitude,
+    tags: englishProfileBackup.tags.map((tag: { text: string }) => tag.text),
+    techStack: englishProfileBackup.techStack,
+  }
+  if (!hasCompleteEnglishBackup(profileSourceFields, { en: profileEnglishFields })) {
+    alert(t('profile.englishRequired'))
+    return
+  }
   const nextProfile = {
     ...nextProfileBase,
     locales: {

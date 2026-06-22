@@ -97,7 +97,7 @@
           <button 
             type="submit" 
             class="px-6 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="loading || !selectedFile"
+            :disabled="loading || !selectedFile || !hasValidEnglishDescription"
           >
             {{ loading ? t('gallery.uploading') : t('gallery.upload') }}
           </button>
@@ -108,9 +108,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { computed, ref, reactive } from 'vue'
 import { galleryApi } from '../api'
 import { t } from '../i18n'
+import { hasCjk } from '../utils/contentLocalization'
 
 const props = defineProps<{
   isOpen: boolean
@@ -133,6 +134,10 @@ const form = reactive({
 const englishBackup = reactive({
   description: ''
 })
+
+const hasValidEnglishDescription = computed(() => (
+  !form.description.trim() || (Boolean(englishBackup.description.trim()) && !hasCjk(englishBackup.description))
+))
 
 const close = () => {
   emit('close')
@@ -186,7 +191,10 @@ const clearFile = () => {
 }
 
 const handleSubmit = async () => {
-  if (!selectedFile.value) return
+  if (!selectedFile.value || !hasValidEnglishDescription.value) {
+    error.value = t('article.englishRequired')
+    return
+  }
   
   loading.value = true
   error.value = ''

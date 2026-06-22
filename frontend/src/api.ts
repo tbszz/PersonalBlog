@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { cacheGetJson, cacheRemove, cacheSetJson, getBrowserStorage } from './utils/cache'
-import { mergeEnglishBackup, type ContentTranslations } from './utils/contentLocalization'
+import { requireEnglishBackup, type ContentTranslations } from './utils/contentLocalization'
 import { parsePortfolioTags } from './utils/portfolio'
 import { prepareFileForUpload } from './utils/uploadOptimizer'
 
@@ -90,6 +90,13 @@ function removeCache(key: string): void {
 function isMissingTranslationsColumn(error: unknown): boolean {
   const candidate = error as { code?: string; message?: string } | null
   return candidate?.code === '42703' && Boolean(candidate.message?.includes('translations'))
+}
+
+function isMissingArticleLocalizationColumn(error: unknown): boolean {
+  const candidate = error as { code?: string; message?: string } | null
+  return candidate?.code === '42703' && Boolean(
+    candidate.message?.includes('translations') || candidate.message?.includes('tags'),
+  )
 }
 
 // ==================== 工具函数 ====================
@@ -218,9 +225,9 @@ export const galleryApi = {
 
     const payload = toSnakeCase({
       ...item,
-      translations: mergeEnglishBackup(item.translations, {
+      translations: requireEnglishBackup({
         description: item.description,
-      }),
+      }, item.translations),
     } as Record<string, unknown>)
 
     let { data, error } = await supabase
@@ -228,17 +235,6 @@ export const galleryApi = {
       .insert(payload)
       .select()
       .single()
-
-    if (isMissingTranslationsColumn(error)) {
-      const { translations: _translations, ...legacyPayload } = payload
-      const legacy = await supabase
-        .from('gallery')
-        .insert(legacyPayload)
-        .select()
-        .single()
-      data = legacy.data as typeof data
-      error = legacy.error
-    }
 
     if (error) throw error
     removeCache(CACHE_KEYS.gallery)
@@ -311,10 +307,10 @@ export const articleApi = {
       .order('publish_time', { ascending: false })
       .range(from, to)
 
-    if (isMissingTranslationsColumn(error)) {
+    if (isMissingArticleLocalizationColumn(error)) {
       const legacy = await supabase
         .from('articles')
-        .select('id, title, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, tags', { count: 'exact' })
+        .select('id, title, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category', { count: 'exact' })
         .eq('status', 'published')
         .order('publish_time', { ascending: false })
         .range(from, to)
@@ -349,10 +345,10 @@ export const articleApi = {
       .eq('id', id)
       .single()
 
-    if (isMissingTranslationsColumn(error)) {
+    if (isMissingArticleLocalizationColumn(error)) {
       const legacy = await supabase
         .from('articles')
-        .select('id, title, content, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, tags, created_at')
+        .select('id, title, content, summary, cover_image, status, publish_time, view_count, like_count, comment_count, category, created_at')
         .eq('id', id)
         .single()
       data = legacy.data as typeof data
@@ -370,13 +366,13 @@ export const articleApi = {
 
     const payload = toSnakeCase({
       ...article,
-      translations: mergeEnglishBackup(article.translations, {
+      translations: requireEnglishBackup({
         title: article.title || '',
         summary: article.summary || '',
         content: article.content || '',
         category: article.category || '',
         tags: article.tags || [],
-      }),
+      }, article.translations),
     } as Record<string, unknown>)
 
     let { data, error } = await supabase
@@ -384,17 +380,6 @@ export const articleApi = {
       .insert(payload)
       .select()
       .single()
-
-    if (isMissingTranslationsColumn(error)) {
-      const { translations: _translations, ...legacyPayload } = payload
-      const legacy = await supabase
-        .from('articles')
-        .insert(legacyPayload)
-        .select()
-        .single()
-      data = legacy.data as typeof data
-      error = legacy.error
-    }
 
     if (error) throw error
     removeCache(CACHE_KEYS.articles(1, 10))
@@ -471,11 +456,11 @@ export const portfolioApi = {
     const payload = toSnakeCase({
       ...item,
       tags: parsePortfolioTags(item.tags),
-      translations: mergeEnglishBackup(item.translations, {
+      translations: requireEnglishBackup({
         title: item.title,
         description: item.description,
         tags: parsePortfolioTags(item.tags),
-      }),
+      }, item.translations),
     } as Record<string, unknown>)
 
     let { data, error } = await supabase
@@ -483,17 +468,6 @@ export const portfolioApi = {
       .insert(payload)
       .select()
       .single()
-
-    if (isMissingTranslationsColumn(error)) {
-      const { translations: _translations, ...legacyPayload } = payload
-      const legacy = await supabase
-        .from('portfolio_items')
-        .insert(legacyPayload)
-        .select()
-        .single()
-      data = legacy.data
-      error = legacy.error
-    }
 
     if (error) throw error
     removeCache(CACHE_KEYS.portfolio)

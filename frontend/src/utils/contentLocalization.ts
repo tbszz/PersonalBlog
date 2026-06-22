@@ -33,8 +33,36 @@ const phraseEnglishText: Array<[RegExp, string]> = [
   [/前端开发/g, 'frontend development'],
 ]
 
-function hasCjk(value: string): boolean {
+export function hasCjk(value: string): boolean {
   return /[\u4e00-\u9fff]/.test(value)
+}
+
+function isNonEmpty(value: unknown): boolean {
+  if (typeof value === 'string') return value.trim().length > 0
+  if (Array.isArray(value)) return value.length > 0
+  return value !== undefined && value !== null
+}
+
+function isEnglishValue(value: unknown, sourceValue: unknown): boolean {
+  if (typeof value === 'string') return value.trim().length > 0 && !hasCjk(value)
+  if (Array.isArray(value)) {
+    return value.length > 0 &&
+      (!Array.isArray(sourceValue) || value.length === sourceValue.length) &&
+      value.every(item => typeof item !== 'string' || (item.trim().length > 0 && !hasCjk(item)))
+  }
+  return value !== undefined && value !== null
+}
+
+export function hasCompleteEnglishBackup<T extends LocalizedFields>(
+  fields: T,
+  translations: ContentTranslations<T> | undefined,
+): boolean {
+  const english = translations?.en as Record<string, unknown> | undefined
+  if (!english) return !Object.values(fields).some(isNonEmpty)
+
+  return Object.entries(fields).every(([key, sourceValue]) => (
+    !isNonEmpty(sourceValue) || isEnglishValue(english[key], sourceValue)
+  ))
 }
 
 export function createEnglishDraft(value: string | undefined | null): string | undefined {
@@ -98,6 +126,17 @@ export function mergeEnglishBackup<T extends LocalizedFields>(
       ...cleanedExistingEn,
     } as Partial<T>,
   }
+}
+
+export function requireEnglishBackup<T extends LocalizedFields>(
+  fields: T,
+  translations: ContentTranslations<T> | undefined,
+): ContentTranslations<T> {
+  const merged = mergeEnglishBackup(translations, fields)
+  if (!hasCompleteEnglishBackup(fields, merged)) {
+    throw new Error('A complete English translation is required for localized content')
+  }
+  return merged
 }
 
 export function localizeContent<T extends LocalizedFields>(

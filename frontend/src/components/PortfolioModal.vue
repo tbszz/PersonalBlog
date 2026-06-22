@@ -93,6 +93,7 @@
                   v-model="englishBackup.title"
                   type="text"
                   class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  required
                 />
               </div>
               <div class="space-y-2">
@@ -101,6 +102,7 @@
                   v-model="englishBackup.description"
                   rows="3"
                   class="w-full bg-black/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                  required
                 ></textarea>
               </div>
               <div class="space-y-2">
@@ -139,7 +141,7 @@
             </button>
             <button
               type="submit"
-              :disabled="isSubmitting || !form.title || !form.description"
+              :disabled="isSubmitting || !canSubmit"
               class="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 order-1 sm:order-2"
             >
               <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
@@ -153,11 +155,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ImagePlus, Loader2, X } from 'lucide-vue-next'
 import { galleryApi, portfolioApi, type PortfolioItem } from '../api'
 import { t } from '../i18n'
 import { parsePortfolioTags } from '../utils/portfolio'
+import { hasCjk } from '../utils/contentLocalization'
 
 defineProps<{
   isOpen: boolean
@@ -188,6 +191,14 @@ const englishBackup = reactive({
   description: '',
   tags: '',
 })
+
+const isValidEnglish = (value: string) => Boolean(value.trim()) && !hasCjk(value)
+const canSubmit = computed(() => (
+  Boolean(form.title.trim() && form.description.trim()) &&
+  isValidEnglish(englishBackup.title) &&
+  isValidEnglish(englishBackup.description) &&
+  (!form.tags.trim() || isValidEnglish(englishBackup.tags))
+))
 
 const resetForm = () => {
   form.title = ''
@@ -234,7 +245,10 @@ const emptyToUndefined = (value: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.title || !form.description) return
+  if (!canSubmit.value) {
+    error.value = t('article.englishRequired')
+    return
+  }
 
   isSubmitting.value = true
   error.value = ''
