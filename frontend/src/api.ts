@@ -3,6 +3,7 @@ import { cacheGetJson, cacheRemove, cacheSetJson, getBrowserStorage } from './ut
 import { requireEnglishBackup, type ContentTranslations } from './utils/contentLocalization'
 import { parsePortfolioTags } from './utils/portfolio'
 import { prepareFileForUpload } from './utils/uploadOptimizer'
+import { getDefaultPortfolioItems } from './data/portfolioSeed'
 
 // ==================== 类型定义 ====================
 
@@ -413,10 +414,10 @@ export const articleApi = {
 
 export const portfolioApi = {
   async getAll(): Promise<{ data: PortfolioItem[] }> {
-    if (!isSupabaseConfigured) return { data: [] }
+    if (!isSupabaseConfigured) return { data: getDefaultPortfolioItems() }
 
     const cached = getCache<PortfolioItem[]>(CACHE_KEYS.portfolio)
-    if (cached) return { data: cached }
+    if (cached && cached.length > 0) return { data: cached }
 
     let { data, error } = await supabase
       .from('portfolio_items')
@@ -440,12 +441,13 @@ export const portfolioApi = {
 
     if (error) {
       if ((error as { code?: string }).code === '42P01' || (error as { code?: string }).code === 'PGRST205') {
-        return { data: [] }
+        return { data: getDefaultPortfolioItems() }
       }
       throw error
     }
 
     const items = (data || []).map(item => mapPortfolioItem(item))
+    if (items.length === 0) return { data: getDefaultPortfolioItems() }
     setCache(CACHE_KEYS.portfolio, items)
     return { data: items }
   },
