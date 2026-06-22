@@ -4,6 +4,7 @@ import { requireEnglishBackup, type ContentTranslations } from './utils/contentL
 import { parsePortfolioTags } from './utils/portfolio'
 import { prepareFileForUpload } from './utils/uploadOptimizer'
 import { getDefaultPortfolioItems } from './data/portfolioSeed'
+import { mergeArticleEnglishBackfill, mergeGalleryEnglishBackfill } from './data/contentBackfill'
 
 // ==================== 类型定义 ====================
 
@@ -216,7 +217,7 @@ export const galleryApi = {
     }
 
     if (error) throw error
-    const items = (data || []).map(item => toCamelCase<GalleryItem>(item))
+    const items = (data || []).map(item => mergeGalleryEnglishBackfill(toCamelCase<GalleryItem>(item)))
     setCache(CACHE_KEYS.gallery, items)
     return { data: items }
   },
@@ -322,7 +323,7 @@ export const articleApi = {
 
     if (error) throw error
     const result = {
-      articles: (data || []).map(item => toCamelCase<Article>(item)),
+      articles: (data || []).map(item => mergeArticleEnglishBackfill(toCamelCase<Article>(item))),
       total: count || 0
     }
     setCache(cacheKey, result)
@@ -357,7 +358,7 @@ export const articleApi = {
     }
 
     if (error) throw error
-    const article = toCamelCase<Article>(data)
+    const article = mergeArticleEnglishBackfill(toCamelCase<Article>(data))
     setCache(cacheKey, article)
     return { data: article }
   },

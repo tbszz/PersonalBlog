@@ -211,6 +211,7 @@ import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
 import { currentLocale, localizeProfile, t } from '../i18n'
 import { hasCompleteEnglishBackup } from '../utils/contentLocalization'
+import { mergeProfileEnglishBackfill } from '../data/contentBackfill'
 
 const props = defineProps<{
   isEditing: boolean
@@ -380,7 +381,11 @@ const getInitialProfile = () => {
   return JSON.parse(JSON.stringify(initialProfile))
 }
 
-const profileData = reactive(getInitialProfile())
+const initialProfileData = getInitialProfile()
+if (initialProfileData.profile) {
+  initialProfileData.profile = mergeProfileEnglishBackfill(initialProfileData.profile)
+}
+const profileData = reactive(initialProfileData)
 const displayProfile = computed(() => localizeProfile(profileData.profile, currentLocale.value))
 
 // Edit Form State
@@ -419,7 +424,7 @@ const fetchProfile = async () => {
       try {
         const parsed = JSON.parse(data.profileJson)
         if (parsed.profile) {
-          Object.assign(profileData.profile, parsed.profile)
+          Object.assign(profileData.profile, mergeProfileEnglishBackfill(parsed.profile))
           // Force overwrite socials to ensure WeChat icon is present (handling legacy data)
           profileData.profile.socials = [
              { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
