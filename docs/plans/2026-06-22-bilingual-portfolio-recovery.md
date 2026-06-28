@@ -155,9 +155,10 @@ Use these six projects unless a stronger recovered source appears:
 - Already present: `supabase/migrations/004_add_portfolio_items.sql`
 - Already present: `supabase/migrations/006_add_content_translations.sql`
 - Already present: `supabase/migrations/007_backfill_existing_english_content.sql`
+- Added: `supabase/migrations/008_seed_portfolio_items.sql`
 
 **Steps:**
-1. Apply migrations 004, 006, and 007 to production Supabase.
-2. Insert the six portfolio seed items into `portfolio_items` with `translations.en`.
+1. Apply migrations 004, 006, 007, and 008 to production Supabase.
+2. Verify the six portfolio seed items exist in `portfolio_items` with `translations.en`.
 3. Verify DB content overrides the frontend seed.
 4. Remove or keep seed as empty-state fallback depending on production confidence.
