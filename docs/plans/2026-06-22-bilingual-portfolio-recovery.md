@@ -27,26 +27,26 @@ The English toggle currently localizes some shell UI but not all user-authored c
 
 ### Selected Portfolio Projects
 
-Use these six projects unless a stronger recovered source appears:
+Use the six main cases from `C:\Users\ASUS\Desktop\作品集.pdf`. GitHub forks are not treated as original portfolio projects.
 
-1. AceMode Global Chinese AI Productivity Community
-   - Evidence: resume PDF, production site `acemode.ai`
-   - Stack: Ruby on Rails, Ember.js, PostgreSQL, Redis, Sidekiq, Docker, Nginx
-2. PPTSight Enterprise Document Structured Retrieval and QA
-   - Evidence: resume PDF, GitHub `XFusion_AI_Hackathon`, local `E:\赛题5`
-   - Stack: Python, FastAPI, React, SQLite FTS5, PDF/PPTX parsing, LLM routing
-3. Yuanye Jiejing Ancient Garden Puzzle Game
-   - Evidence: resume PDF, GitHub `Yuanye-Jiejing`
-   - Stack: Unity 6000, C#, HDRP, Timeline, UGUI, OpenAI-compatible API
-4. XianyuAutoAgent AI Sales Assistant
-   - Evidence: GitHub `XianyuAutoAgent`
-   - Stack: Python, multi-agent decisioning, negotiation, context-aware automation
-5. VoiceBridge / Macau Hackathon Source
-   - Evidence: GitHub `aomen-heikesong-source`
-   - Stack: Python, voice/AI workflow
-6. Awesome OpenClaw Manager
-   - Evidence: GitHub `awesome-openclaw-manager`
-   - Stack: TypeScript, dashboard, Telegram/Discord bot gateway, operations UI
+1. PPTSight Enterprise Document Structured Retrieval and QA
+   - Evidence: portfolio PDF Case 01; XFusion AI Hackathon Task 5 ownership.
+   - Stack: Python, FastAPI, React, SQLite FTS5, PPTX XML, RAG
+2. Resume Protocol AI Career Material and Job Radar
+   - Evidence: portfolio PDF Case 02; GitHub `Resume-Protocol` is not a fork.
+   - Stack: React, Vite, Express, Playwright, pdf-parse, MiniMax API
+3. AceMode Global Chinese AI Productivity Community
+   - Evidence: portfolio PDF Case 03, production site `acemode.ai`
+   - Stack: Ruby on Rails, Ember.js, PostgreSQL, Redis, Sidekiq, Nginx
+4. OpenClaw Multi-Agent Control Console
+   - Evidence: portfolio PDF Case 04; GitHub `awesome-openclaw-manager` is not a fork.
+   - Stack: Tauri 2, React, TypeScript, Rust, WSL2, Gateway orchestration
+5. HyperFarming Smart Agriculture Management Platform
+   - Evidence: portfolio PDF Case 05.
+   - Stack: Vue 3, TypeScript, Go, Gin, PostgreSQL, WebSocket, Docker
+6. Automated Video Editing Pipeline
+   - Evidence: portfolio PDF Case 06.
+   - Stack: React, Remotion, IndexTTS, Python, script slicing, auto render
 
 ### Requirements
 
