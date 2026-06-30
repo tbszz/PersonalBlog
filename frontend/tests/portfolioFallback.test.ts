@@ -1,5 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defaultPortfolioItems } from '../src/data/portfolioSeed.js'
 import { hasCjk, hasCompleteEnglishBackup, localizePortfolioItem } from '../src/utils/contentLocalization.js'
 
@@ -45,4 +47,11 @@ test('default portfolio seed localizes to English without Chinese text', () => {
     assert.equal(hasCjk(localized.description), false, localized.description)
     assert.equal(localized.tags?.some(hasCjk), false, localized.tags?.join(', '))
   }
+})
+
+test('portfolio cover images are shown without cropping', () => {
+  const component = readFileSync(resolve(process.cwd(), 'src/components/PortfolioGrid.vue'), 'utf8')
+
+  assert.match(component, /object-contain/)
+  assert.doesNotMatch(component, /coverImage[\s\S]*object-cover/)
 })

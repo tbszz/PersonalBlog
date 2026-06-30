@@ -5,11 +5,11 @@
       :key="item.id"
       class="group relative overflow-hidden rounded-xl border border-white/5 bg-neutral-900/30 transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:bg-white/5"
     >
-      <div v-if="item.coverImage" class="aspect-[16/10] overflow-hidden bg-black/30">
+      <div v-if="item.coverImage" class="aspect-[16/10] overflow-hidden bg-black/40">
         <img
           :src="item.coverImage"
           :alt="item.title"
-          class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          class="h-full w-full object-contain"
           loading="lazy"
           decoding="async"
         />
