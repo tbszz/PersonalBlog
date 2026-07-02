@@ -79,6 +79,8 @@
                  v-for="social in profileData.profile.socials" 
                  :key="social.name" 
                  :href="social.name === 'Wechat' ? 'javascript:void(0)' : social.url" 
+                 :aria-label="social.name"
+                 :title="social.name"
                  @click="social.name === 'Wechat' ? openWechatModal() : null"
                  class="p-2.5 rounded-full bg-white/5 border border-white/5 hover:bg-white hover:text-black hover:border-white text-gray-400 transition-all duration-300 cursor-pointer"
                >
@@ -206,12 +208,13 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch, onMounted, h } from 'vue'
 import { useMouse, useWindowSize } from '@vueuse/core'
-import { Github, Tv, UploadCloud } from 'lucide-vue-next'
+import { Github, Globe, UploadCloud } from 'lucide-vue-next'
 import { galleryApi, userApi } from '../api'
 import WechatModal from './WechatModal.vue'
 import { currentLocale, localizeProfile, t } from '../i18n'
 import { hasCompleteEnglishBackup } from '../utils/contentLocalization'
 import { mergeProfileEnglishBackfill } from '../data/contentBackfill'
+import { getDefaultProfileSocials, normalizeProfileSocials } from '../utils/profileSocials'
 
 const props = defineProps<{
   isEditing: boolean
@@ -333,10 +336,22 @@ const WechatIcon = {
   ])
 }
 
+const XIcon = {
+  render: () => h('svg', {
+    xmlns: 'http://www.w3.org/2000/svg',
+    viewBox: '0 0 16 16',
+    fill: 'currentColor',
+    class: 'w-4 h-4',
+  }, [
+    h('path', { d: 'M9.5 6.8 15.3.6h-1.4l-5 5.4-4-5.4H0l6.2 8.2L0 15.5h1.4l5.4-5.9 4.4 5.9H16L9.5 6.8zM2.1 1.6h2.2l9.7 12.9h-2.2L2.1 1.6z' }),
+  ])
+}
+
 const getIcon = (name: string) => {
    switch(name) {
       case 'Github': return Github
-      case 'Tv': return Tv // Bilibili
+      case 'Globe': return Globe
+      case 'X': return XIcon
       case 'Wechat': return WechatIcon
       default: return Github
    }
@@ -355,11 +370,7 @@ const initialProfile = {
      },
      tags: [],
      techStack: [],
-     socials: [
-       { name: "Github", icon: "Github", url: "#" },
-       { name: "Bilibili", icon: "Tv", url: "#" },
-       { name: "Wechat", icon: "Wechat", url: "#" }
-     ]
+     socials: getDefaultProfileSocials()
    },
    stats: {
      articles: "-",
@@ -383,7 +394,7 @@ const getInitialProfile = () => {
 
 const initialProfileData = getInitialProfile()
 if (initialProfileData.profile) {
-  initialProfileData.profile = mergeProfileEnglishBackfill(initialProfileData.profile)
+  initialProfileData.profile = normalizeProfileSocials(mergeProfileEnglishBackfill(initialProfileData.profile))
 }
 const profileData = reactive(initialProfileData)
 const displayProfile = computed(() => localizeProfile(profileData.profile, currentLocale.value))
@@ -424,13 +435,9 @@ const fetchProfile = async () => {
       try {
         const parsed = JSON.parse(data.profileJson)
         if (parsed.profile) {
-          Object.assign(profileData.profile, mergeProfileEnglishBackfill(parsed.profile))
-          // Force overwrite socials to ensure WeChat icon is present (handling legacy data)
-          profileData.profile.socials = [
-             { name: "Github", icon: "Github", url: "https://github.com/tbszz" },
-             { name: "Bilibili", icon: "Tv", url: "https://space.bilibili.com/" },
-             { name: "Wechat", icon: "Wechat", url: "#" }
-          ]
+          Object.assign(profileData.profile, normalizeProfileSocials(mergeProfileEnglishBackfill(parsed.profile)))
+          // Force overwrite socials to ensure legacy profile JSON cannot restore stale links.
+          profileData.profile.socials = getDefaultProfileSocials()
           profileUpdated = true
         }
       } catch (e) {
@@ -451,6 +458,8 @@ const fetchProfile = async () => {
           profileUpdated = true
       }
     }
+
+    profileData.profile.socials = getDefaultProfileSocials()
 
     // Load WeChat QR Code
     if (data.wechatQrCode) {

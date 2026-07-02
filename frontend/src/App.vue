@@ -1,5 +1,5 @@
 <template>
-  <div ref="page" class="min-h-screen bg-[#050505] text-white relative font-sans selection:bg-blue-500/30 selection:text-blue-200" :class="resolvedTheme === 'light' ? 'theme-light' : 'theme-dark'">
+  <div ref="page" class="min-h-screen bg-[#050505] text-white relative font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-dark">
     
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-6 py-3 sm:py-5 backdrop-blur-md bg-[#050505]/50 border-b border-white/5 transition-all duration-300">
@@ -11,13 +11,6 @@
       </div>
       
       <div class="flex items-center gap-4">
-        <button
-          @click="cycleTheme"
-          class="p-2 text-gray-500 hover:text-white transition-colors"
-          :title="t('nav.theme')"
-        >
-          <component :is="themeIcon" class="w-4 h-4" />
-        </button>
         <button
           @click="toggleLocale"
           class="px-3 py-1.5 text-xs font-semibold border border-white/10 text-gray-300 rounded-full hover:text-white hover:border-white/30 transition-colors"
@@ -167,7 +160,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useMouse } from '@vueuse/core'
 import { authApi, galleryApi, type Article, type GalleryItem, type PortfolioItem } from './api'
-import { Lock, LogOut, Monitor, Moon, Sun } from 'lucide-vue-next'
+import { Lock, LogOut } from 'lucide-vue-next'
 
 import HeroSection from './components/HeroSection.vue'
 import ActionToolbar from './components/ActionToolbar.vue'
@@ -182,7 +175,7 @@ import ParticleEffect from './components/ParticleEffect.vue'
 import WechatModal from './components/WechatModal.vue'
 import { userApi } from './api'
 import { currentLocale, initLocale, localeNames, t, toggleLocale } from './i18n'
-import { cycleTheme, initTheme, resolvedTheme, themePreference } from './theme'
+import { initTheme } from './theme'
 
 // Auth State
 const isLoggedIn = ref(false)
@@ -193,10 +186,6 @@ const showPortfolioModal = ref(false)
 const showConnectModal = ref(false)
 const isEditingProfile = ref(false)
 const wechatQrCode = ref(localStorage.getItem('blog_wechat_qr') || '')
-const themeIcon = computed(() => {
-  if (themePreference.value === 'system') return Monitor
-  return resolvedTheme.value === 'dark' ? Moon : Sun
-})
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true

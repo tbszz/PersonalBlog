@@ -16,6 +16,10 @@ test('translate returns localized text with Chinese fallback', () => {
   assert.equal(translate('nav.missing', 'en'), 'nav.missing')
 })
 
+test('Chinese profile age stat is labeled as years old', () => {
+  assert.equal(translate('profile.years', 'zh'), '岁')
+})
+
 test('English locale includes all static shell text', () => {
   assert.equal(translate('brand.name', 'en'), 'Zouzi')
   assert.equal(translate('profile.saveFailed', 'en'), 'Failed to save. Please retry.')
